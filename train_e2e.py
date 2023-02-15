@@ -27,19 +27,14 @@ from util.io import load_json, store_json, store_gz_json, clear_files
 from util.dataset import DATASETS, load_classes
 from util.score import compute_mAPs
 
-# EPOCH_NUM_FRAMES = 4583457
-EPOCH_NUM_FRAMES = 5733648
-
+EPOCH_NUM_FRAMES = 500000
 BASE_NUM_WORKERS = 4
-
 BASE_NUM_VAL_EPOCHS = 20
-
 INFERENCE_BATCH_SIZE = 4
-
 
 # Prevent the GRU params from going too big (cap it at a RegNet-Y 800MF)
 MAX_GRU_HIDDEN_DIM = 768
-
+MAX_AF_HIDDEN_DIM = 768
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -73,7 +68,7 @@ def get_args():
         ], help='CNN architecture for feature extraction')
     parser.add_argument(
         '-t', '--temporal_arch', type=str, default='gru',
-        choices=['', 'gru', 'deeper_gru', 'mstcn', 'asformer'],
+        choices=['', 'gru', 'deeper_gru', 'mstcn', 'asformer' , 'aformer'],
         help='Spotting architecture, after spatial pooling')
 
     parser.add_argument('--clip_len', type=int, default=100)
@@ -188,6 +183,9 @@ class E2EModel(BaseRGBModel):
                 self._pred_fine = TCNPrediction(feat_dim, num_classes, 3)
             elif temporal_arch == 'asformer':
                 self._pred_fine = ASFormerPrediction(feat_dim, num_classes, 3)
+            elif temporal_arch == 'former':
+                hidden_dim = feat_dim
+                # self._pred_fine = VanillaFormerPrediction(feat_dim, hidden_dim, num_classes, 3)
             elif temporal_arch == '':
                 self._pred_fine = FCPrediction(feat_dim, num_classes)
             else:
@@ -214,7 +212,7 @@ class E2EModel(BaseRGBModel):
             if true_clip_len != clip_len:
                 # Undo padding
                 im_feat = im_feat[:, :true_clip_len, :]
-
+            print(im_feat.shape)
             return self._pred_fine(im_feat)
 
         def print_stats(self):

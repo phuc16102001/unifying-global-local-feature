@@ -5,6 +5,7 @@ import torch.nn.functional as F
 
 from .common import SingleStageTCN
 from .impl.asformer import MyTransformer
+from .impl.former import Encoder
 
 
 class FCPrediction(nn.Module):
@@ -75,3 +76,15 @@ class ASFormerPrediction(nn.Module):
         return self._net(
             x.permute(0, 2, 1), torch.ones((B, 1, T), device=x.device)
         ).permute(0, 1, 3, 2)
+
+
+class VanillaEncoderPrediction(nn.Module):
+    def __init__(self, hidden_dim, num_classes, num_encoders=3, heads=8, dropout=0.1):
+        super().__init__()
+        self.encoder = Encoder(hidden_dim, num_encoders, heads, dropout)
+        self.out = nn.Linear(hidden_dim, num_classes)
+        
+    def forward(self, src):
+        e_out = self.encoder(src)
+        out = self.out(e_out)
+        return out
