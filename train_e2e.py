@@ -212,6 +212,7 @@ class E2EModel(BaseRGBModel):
             if true_clip_len != clip_len:
                 # Undo padding
                 im_feat = im_feat[:, :true_clip_len, :]
+            print(im_feat.shape)
 
             return self._pred_fine(im_feat)
 
