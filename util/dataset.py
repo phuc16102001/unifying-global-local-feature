@@ -3,17 +3,7 @@ import os
 from util.io import load_text
 
 
-DATASETS = [
-    'tennis',
-    'fs_perf',
-    'fs_comp',
-    'finediving',
-    'finegym',
-    'soccernetv2',
-    'soccernetv2_protocol1',
-    'soccernetv2_protocol2',
-    'soccernetv2_protocol3',
-]
+DATASETS = ['soccernet']
 
 
 def load_classes(file_name):

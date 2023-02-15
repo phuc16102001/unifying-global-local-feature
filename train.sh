@@ -1,6 +1,6 @@
 export CUDA_VISIBLE_DEVICES=0
 python3 train_e2e.py "soccernetv2" \
-	"/extdrive/data/soccernet_720p_2fps" \
+	"/ext_drive/data/soccernet_720p_2fps" \
 	-s "results/save_soccernet" \
 	-m "rny008_gsm" \
 	-mgpu \
