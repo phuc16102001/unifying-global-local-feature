@@ -163,7 +163,6 @@ class Encoder(nn.Module):
         self.norm = Norm(d_model)
     
     def forward(self, x):
-        x = self.embed(x)
         x = self.pe(x)
         for i in range(self.n):
             x = self.encoder_layers[i](x)
