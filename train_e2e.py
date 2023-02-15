@@ -34,7 +34,7 @@ INFERENCE_BATCH_SIZE = 4
 
 # Prevent the GRU params from going too big (cap it at a RegNet-Y 800MF)
 MAX_GRU_HIDDEN_DIM = 768
-MAX_AF_HIDDEN_DIM = 768
+MAX_FORMER_HIDDEN_DIM = 768
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -68,7 +68,7 @@ def get_args():
         ], help='CNN architecture for feature extraction')
     parser.add_argument(
         '-t', '--temporal_arch', type=str, default='gru',
-        choices=['', 'gru', 'deeper_gru', 'mstcn', 'asformer' , 'aformer'],
+        choices=['', 'gru', 'deeper_gru', 'mstcn', 'asformer', 'former'],
         help='Spotting architecture, after spatial pooling')
 
     parser.add_argument('--clip_len', type=int, default=100)
@@ -185,7 +185,7 @@ class E2EModel(BaseRGBModel):
                 self._pred_fine = ASFormerPrediction(feat_dim, num_classes, 3)
             elif temporal_arch == 'former':
                 hidden_dim = feat_dim
-                # self._pred_fine = VanillaFormerPrediction(feat_dim, hidden_dim, num_classes, 3)
+                self._pred_fine = VanillaEncoderPrediction(hidden_dim, num_classes, 3)
             elif temporal_arch == '':
                 self._pred_fine = FCPrediction(feat_dim, num_classes)
             else:
@@ -212,7 +212,7 @@ class E2EModel(BaseRGBModel):
             if true_clip_len != clip_len:
                 # Undo padding
                 im_feat = im_feat[:, :true_clip_len, :]
-            print(im_feat.shape)
+
             return self._pred_fine(im_feat)
 
         def print_stats(self):
@@ -239,7 +239,6 @@ class E2EModel(BaseRGBModel):
 
     def epoch(self, loader, optimizer=None, scaler=None, lr_scheduler=None,
               acc_grad_iter=1, fg_weight=5):
-
         if optimizer is None:
             self._model.eval()
         else:
@@ -253,35 +252,32 @@ class E2EModel(BaseRGBModel):
 
         epoch_loss = 0.
         with torch.no_grad() if optimizer is None else nullcontext():
-            try:
-                for batch_idx, batch in enumerate(tqdm(loader)):
-                    frame = loader.dataset.load_frame_gpu(batch, self.device)
-                    label = batch['label'].to(self.device)
+            for batch_idx, batch in enumerate(tqdm(loader)):
+                frame = loader.dataset.load_frame_gpu(batch, self.device)
+                label = batch['label'].to(self.device)
 
-                    # Depends on whether mixup is used
-                    label = label.flatten() if len(label.shape) == 2 \
-                        else label.view(-1, label.shape[-1])
+                # Depends on whether mixup is used
+                label = label.flatten() if len(label.shape) == 2 \
+                    else label.view(-1, label.shape[-1])
 
-                    with torch.cuda.amp.autocast():
-                        pred = self._model(frame)
+                with torch.cuda.amp.autocast():
+                    pred = self._model(frame)
 
-                        loss = 0.
-                        if len(pred.shape) == 3:
-                            pred = pred.unsqueeze(0)
+                    loss = 0.
+                    if len(pred.shape) == 3:
+                        pred = pred.unsqueeze(0)
 
-                        for i in range(pred.shape[0]):
-                            loss += F.cross_entropy(
-                                pred[i].reshape(-1, self._num_classes), label,
-                                **ce_kwargs)
+                    for i in range(pred.shape[0]):
+                        loss += F.cross_entropy(
+                            pred[i].reshape(-1, self._num_classes), label,
+                            **ce_kwargs)
 
-                    if optimizer is not None:
-                        step(optimizer, scaler, loss / acc_grad_iter,
-                            lr_scheduler=lr_scheduler,
-                            backward_only=(batch_idx + 1) % acc_grad_iter != 0)
+                if optimizer is not None:
+                    step(optimizer, scaler, loss / acc_grad_iter,
+                         lr_scheduler=lr_scheduler,
+                         backward_only=(batch_idx + 1) % acc_grad_iter != 0)
 
-                    epoch_loss += loss.detach().item()
-            except:
-                print('non validate')
+                epoch_loss += loss.detach().item()
 
         return epoch_loss / len(loader)     # Avg loss
 
@@ -316,7 +312,7 @@ def evaluate(model, dataset, split, classes, save_pred, calc_stats=True,
 
     # Do not up the batch size if the dataset augments
     batch_size = 1 if dataset.augment else INFERENCE_BATCH_SIZE
-  
+
     for clip in tqdm(DataLoader(
             dataset, num_workers=BASE_NUM_WORKERS * 2, pin_memory=True,
             batch_size=batch_size
@@ -431,11 +427,7 @@ def get_datasets(args):
         classes, os.path.join('data', args.dataset, 'val.json'),
         args.frame_dir, args.modality, args.clip_len, dataset_len // 4,
         **dataset_kwargs)
-        
-    try:
-        val_data.print_info()
-    except:
-        print('non validate')
+    val_data.print_info()
 
     val_data_frames = None
     if args.criterion == 'map':
@@ -497,12 +489,8 @@ def store_config(file_path, args, num_epochs, classes):
 
 def get_num_train_workers(args):
     n = BASE_NUM_WORKERS * 2
-    num_gpus = 1
-    if args.gpu_parallel:
-        num_gpus = torch.cuda.device_count()
-        # num_gpus = 2
-        n *= num_gpus
-    print(f'num_gpus: {num_gpus}, num_cpus: {os.cpu_count()}')
+    # if args.gpu_parallel:
+    #     n *= torch.cuda.device_count()
     return min(os.cpu_count(), n)
 
 
@@ -542,7 +530,6 @@ def main(args):
         pin_memory=True, num_workers=BASE_NUM_WORKERS,
         worker_init_fn=worker_init_fn)
 
-    print('Create model:')
     model = E2EModel(
         len(classes) + 1, args.feature_arch, args.temporal_arch,
         clip_len=args.clip_len, modality=args.modality,
@@ -566,7 +553,7 @@ def main(args):
 
     # Write it to console
     store_config('/dev/stdout', args, num_epochs, classes)
-    print('Start training:')
+
     for epoch in range(epoch, num_epochs):
         train_loss = model.epoch(
             train_loader, optimizer, scaler,
