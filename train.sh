@@ -9,9 +9,9 @@ python3 train_e2e.py "soccernet" \
 	--start_val_epoch 149 \
 	--temporal_arch "former" \
 	--warm_up_epochs 3 \
-	--batch_size 4 \
+	--batch_size 6 \
 	--crop_dim -1 \
-	--num_workers 4 \
+	--num_workers 8 \
 
 # srun python3 train_e2e.py soccernetv2 soccerNet_outdir -s /cm/archive/kimth1/spot/save_soccernet_p2 -m rny008_gsm -mgpu --num_epochs 50 --batch_size 8 --crop_dim -1 --resume
 # add --resume to train from checkpoint
