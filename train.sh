@@ -4,7 +4,7 @@ python3 train_e2e.py "soccernet" \
 	-s "results/save_soccernet" \
 	-m "rny008_gsm" \
 	-mgpu \
-	--learning_rate 0.001 \
+	--learning_rate 0.0001 \
 	--num_epochs 150 \
 	--start_val_epoch 149 \
 	--temporal_arch "former" \
