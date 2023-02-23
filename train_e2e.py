@@ -112,7 +112,7 @@ class E2EModel(BaseRGBModel):
         def __init__(self, num_classes, feature_arch, temporal_arch, clip_len,
                      modality, label_type):
             super().__init__()
-            self.label_type = label_type
+            self._label_type = label_type
             is_rgb = modality == 'rgb'
             in_channels = {'flow': 2, 'bw': 1, 'rgb': 3}[modality]
 
@@ -239,6 +239,7 @@ class E2EModel(BaseRGBModel):
 
         self._model.to(device)
         self._num_classes = num_classes
+        self._label_type = label_type
 
     def epoch(self, loader, optimizer=None, scaler=None, lr_scheduler=None,
               acc_grad_iter=1, fg_weight=5):
@@ -271,7 +272,7 @@ class E2EModel(BaseRGBModel):
                         pred = pred.unsqueeze(0)
 
                     for i in range(pred.shape[0]):
-                        if (self.label_type=='one_hot'):
+                        if (self._label_type=='one_hot'):
                             loss_func = F.binary_cross_entropy_with_logits
                         else:
                             loss_func = F.cross_entropy 
@@ -305,7 +306,7 @@ class E2EModel(BaseRGBModel):
                 pred = pred[0]
             if len(pred.shape) > 3:
                 pred = pred[-1]
-            if (self.label_type=='one_hot'):
+            if (self._label_type=='one_hot'):
                 pred = torch.sigmoid(pred)
             else:
                 pred = torch.softmax(pred)
