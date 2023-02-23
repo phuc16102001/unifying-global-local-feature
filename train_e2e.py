@@ -272,7 +272,7 @@ class E2EModel(BaseRGBModel):
 
                     for i in range(pred.shape[0]):
                         loss += F.binary_cross_entropy(
-                            torch.sigmoid(pred[i].reshape(-1, self._num_classes)), 
+                            pred[i].reshape(-1, self._num_classes), 
                             label,
                             **ce_kwargs)
 
