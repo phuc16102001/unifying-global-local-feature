@@ -1,7 +1,7 @@
 
 export CUDA_VISIBLE_DEVICES=0
 python3 test_e2e.py "results/BCE_800MF_GRU" \
-	"/extdrive/data/soccernet_720p_2fps" \
+	"/ext_drive/data/soccernet_720p_2fps" \
 	-s "test" \
 	--save
 

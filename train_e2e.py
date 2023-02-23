@@ -30,7 +30,7 @@ from util.score import compute_mAPs
 EPOCH_NUM_FRAMES = 500_000
 BASE_NUM_WORKERS = 4
 BASE_NUM_VAL_EPOCHS = 20
-INFERENCE_BATCH_SIZE = 6
+INFERENCE_BATCH_SIZE = 24
 
 # Prevent the GRU params from going too big (cap it at a RegNet-Y 800MF)
 MAX_GRU_HIDDEN_DIM = 768
