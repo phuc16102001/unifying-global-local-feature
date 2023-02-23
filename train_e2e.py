@@ -494,7 +494,8 @@ def store_config(file_path, args, num_epochs, classes):
         'epoch_num_frames': EPOCH_NUM_FRAMES,
         'dilate_len': args.dilate_len,
         'mixup': args.mixup,
-        'fg_upsample': args.fg_upsample
+        'fg_upsample': args.fg_upsample,
+        'label_type': args.label_type
     }
     store_json(file_path, config, pretty=True)
 

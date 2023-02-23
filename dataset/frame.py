@@ -397,7 +397,7 @@ class ActionSpotDataset(Dataset):
         if (self.label_type=='one_hot'):
             label_shape = (self._clip_len, len(self._class_dict) + 1)
             labels = np.zeros(label_shape, np.int64)
-            labels[:, 0] = 1
+            labels[:, 0] = 1.
         else:
             label_shape = self._clip_len
             labels = np.zeros(label_shape, np.int64)
@@ -416,8 +416,8 @@ class ActionSpotDataset(Dataset):
                     min(self._clip_len, label_idx + self._dilate_len + 1)
                 ):
                     if (self.label_type=='one_hot'):
-                        labels[i][label] = 1
-                        labels[i][0] = 0
+                        labels[i][label] = 1.
+                        labels[i][0] = 0.
                     else:
                         labels[i] = label
 
