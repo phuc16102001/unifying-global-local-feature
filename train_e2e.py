@@ -301,7 +301,7 @@ class E2EModel(BaseRGBModel):
                 pred = pred[0]
             if len(pred.shape) > 3:
                 pred = pred[-1]
-            pred = torch.softmax(pred, axis=2)
+            pred = torch.sigmoid(pred)
             pred_cls = torch.argmax(pred, axis=2)
             return pred_cls.cpu().numpy(), pred.cpu().numpy()
 
