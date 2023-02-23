@@ -317,6 +317,7 @@ class ActionSpotDataset(Dataset):
         assert pad_len >= 0
         self._is_eval = is_eval
         assert label_type in ['integer', 'one_hot']
+        self.label_type = label_type
 
         # Label modifications
         self._dilate_len = dilate_len
