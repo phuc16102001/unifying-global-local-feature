@@ -296,6 +296,7 @@ class ActionSpotDataset(Dataset):
             pad_len=DEFAULT_PAD_LEN,    # Number of frames to pad the start
                                         # and end of videos
             fg_upsample=-1,             # Sample foreground explicitly
+            label_type='one_hot'        # Type of label encoding
     ):
         self._src_file = label_file
         self._labels = load_json(label_file)
@@ -315,6 +316,7 @@ class ActionSpotDataset(Dataset):
         self._pad_len = pad_len
         assert pad_len >= 0
         self._is_eval = is_eval
+        assert label_type in ['integer', 'one_hot']
 
         # Label modifications
         self._dilate_len = dilate_len
@@ -389,7 +391,14 @@ class ActionSpotDataset(Dataset):
         else:
             video_meta, base_idx = self._sample_uniform()
 
-        labels = np.zeros(self._clip_len, np.int64)
+        if (self.label_type=='one_hot'):
+            label_shape = (self._clip_len, len(self._class_dict) + 1)
+            labels = np.zeros(label_shape, np.int64)
+            labels[:, 0] = 1
+        else:
+            label_shape = self._clip_len
+            labels = np.zeros(label_shape, np.int64)
+
         for event in video_meta['events']:
             event_frame = event['frame']
 
@@ -403,7 +412,11 @@ class ActionSpotDataset(Dataset):
                     max(0, label_idx - self._dilate_len),
                     min(self._clip_len, label_idx + self._dilate_len + 1)
                 ):
-                    labels[i] = label
+                    if (self.label_type=='one_hot'):
+                        labels[i][label] = 1
+                        labels[i][0] = 0
+                    else:
+                        labels[i] = label
 
         frames = self._frame_reader.load_frames(
             video_meta['video'], base_idx,

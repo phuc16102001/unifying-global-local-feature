@@ -11,6 +11,7 @@ python3 train_e2e.py "soccernet" \
 	--warm_up_epochs 3 \
 	--batch_size 6 \
 	--crop_dim -1 \
+	--label_type "one_hot" \
 	--num_workers 8 \
 
 # srun python3 train_e2e.py soccernetv2 soccerNet_outdir -s /cm/archive/kimth1/spot/save_soccernet_p2 -m rny008_gsm -mgpu --num_epochs 50 --batch_size 8 --crop_dim -1 --resume

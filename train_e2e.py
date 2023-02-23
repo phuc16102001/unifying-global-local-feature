@@ -83,6 +83,7 @@ def get_args():
     parser.add_argument('-lr', '--learning_rate', type=float, default=0.001)
     parser.add_argument('-s', '--save_dir', type=str, required=True,
                         help='Dir to save checkpoints and predictions')
+    parser.add_argument('--label_type', choices=['integer','one_hot'], default='integer')
 
     parser.add_argument('--resume', action='store_true',
                         help='Resume training from checkpoint in <save_dir>')
@@ -109,8 +110,9 @@ class E2EModel(BaseRGBModel):
     class Impl(nn.Module):
 
         def __init__(self, num_classes, feature_arch, temporal_arch, clip_len,
-                     modality):
+                     modality, label_type):
             super().__init__()
+            self.label_type = label_type
             is_rgb = modality == 'rgb'
             in_channels = {'flow': 2, 'bw': 1, 'rgb': 3}[modality]
 
@@ -257,7 +259,7 @@ class E2EModel(BaseRGBModel):
                 frame = loader.dataset.load_frame_gpu(batch, self.device)
                 label = batch['label'].to(self.device)
 
-                # Depends on whether mixup is used
+                # Depends on whether mixup/one-hot is used
                 label = label.flatten() if len(label.shape) == 2 \
                     else label.view(-1, label.shape[-1])
 
@@ -269,8 +271,9 @@ class E2EModel(BaseRGBModel):
                         pred = pred.unsqueeze(0)
 
                     for i in range(pred.shape[0]):
-                        loss += F.cross_entropy(
-                            pred[i].reshape(-1, self._num_classes), label,
+                        loss += F.binary_cross_entropy(
+                            torch.sigmoid(pred[i].reshape(-1, self._num_classes)), 
+                            label,
                             **ce_kwargs)
 
                 if optimizer is not None:
@@ -534,7 +537,7 @@ def main(args):
     model = E2EModel(
         len(classes) + 1, args.feature_arch, args.temporal_arch,
         clip_len=args.clip_len, modality=args.modality,
-        multi_gpu=args.gpu_parallel)
+        multi_gpu=args.gpu_parallel, label_type=args.label_type)
     optimizer, scaler = model.get_optimizer({'lr': args.learning_rate})
 
     # Warmup schedule
