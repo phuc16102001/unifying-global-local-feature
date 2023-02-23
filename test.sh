@@ -1,8 +1,8 @@
 
-export CUDA_VISIBLE_DEVICES=3
-python3 test_e2e.py "save_checkpoints_of_author/soccer_challenge_rny008gsm_gru_rgb" \
+export CUDA_VISIBLE_DEVICES=0
+python3 test_e2e.py "results/BCE_800MF_GRU" \
 	"/extdrive/data/soccernet_720p_2fps" \
-	-s challenge \
+	-s "test" \
 	--save
 
 # python3 test_e2e.py <model_dir> <frame_dir> -s <split> --save
