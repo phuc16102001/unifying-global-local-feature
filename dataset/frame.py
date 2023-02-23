@@ -332,6 +332,8 @@ class ActionSpotDataset(Dataset):
                         self._flat_labels.append((i, event['frame']))
 
         self._mixup = mixup
+        if (self._mixup): 
+            self.label_type = 'integer'
 
         # Try to do defer the latter half of the transforms to the GPU
         self._gpu_transform = None
