@@ -274,6 +274,7 @@ class E2EModel(BaseRGBModel):
                     for i in range(pred.shape[0]):
                         if (self._label_type=='one_hot'):
                             loss_func = F.binary_cross_entropy_with_logits
+                            label = label.float()
                         else:
                             loss_func = F.cross_entropy 
                         loss += loss_func(
