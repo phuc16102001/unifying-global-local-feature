@@ -10,6 +10,7 @@ python3 train_e2e.py "soccernet" \
 	--temporal_arch "gru" \
 	--warm_up_epochs 3 \
 	--batch_size 6 \
+	# --mixup \
 	--crop_dim -1 \
 	--label_type "one_hot" \
 	--num_workers 8 \

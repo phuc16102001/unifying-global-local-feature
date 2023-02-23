@@ -93,7 +93,7 @@ def get_args():
 
     parser.add_argument('--dilate_len', type=int, default=0,
                         help='Label dilation when training')
-    parser.add_argument('--mixup', type=bool, default=True)
+    parser.add_argument('--mixup', action='store_true')
 
     parser.add_argument('-j', '--num_workers', type=int,
                         help='Base number of dataloader workers')
@@ -271,7 +271,11 @@ class E2EModel(BaseRGBModel):
                         pred = pred.unsqueeze(0)
 
                     for i in range(pred.shape[0]):
-                        loss += F.binary_cross_entropy_with_logits(
+                        if (self.label_type=='one_hot'):
+                            loss_func = F.binary_cross_entropy_with_logits
+                        else:
+                            loss_func = F.cross_entropy 
+                        loss += loss_func(
                             pred[i].reshape(-1, self._num_classes), 
                             label,
                             **ce_kwargs)
@@ -301,7 +305,10 @@ class E2EModel(BaseRGBModel):
                 pred = pred[0]
             if len(pred.shape) > 3:
                 pred = pred[-1]
-            pred = torch.sigmoid(pred)
+            if (self.label_type=='one_hot'):
+                pred = torch.sigmoid(pred)
+            else:
+                pred = torch.softmax(pred)
             pred_cls = torch.argmax(pred, axis=2)
             return pred_cls.cpu().numpy(), pred.cpu().numpy()
 

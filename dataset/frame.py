@@ -332,6 +332,8 @@ class ActionSpotDataset(Dataset):
                         self._flat_labels.append((i, event['frame']))
 
         self._mixup = mixup
+        if (mixup): 
+            self.label_type = 'integer'
 
         # Try to do defer the latter half of the transforms to the GPU
         self._gpu_transform = None
@@ -435,12 +437,8 @@ class ActionSpotDataset(Dataset):
             l = random.betavariate(0.2, 0.2)
             label_dist = np.zeros((self._clip_len, len(self._class_dict) + 1))
 
-            if (self.label_type=='one_hot'):
-                label_dist[range(self._clip_len), torch.nonzero(ret['label'])] = l
-                label_dist[range(self._clip_len), torch.nonzero(mix['label'])] += 1. - l
-            else:
-                label_dist[range(self._clip_len), ret['label']] = l
-                label_dist[range(self._clip_len), mix['label']] += 1. - l
+            label_dist[range(self._clip_len), ret['label']] = l
+            label_dist[range(self._clip_len), mix['label']] += 1. - l
 
             if self._gpu_transform is None:
                 ret['frame'] = l * ret['frame'] + (1. - l) * mix['frame']
