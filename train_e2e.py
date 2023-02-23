@@ -271,7 +271,7 @@ class E2EModel(BaseRGBModel):
                         pred = pred.unsqueeze(0)
 
                     for i in range(pred.shape[0]):
-                        loss += F.binary_cross_entropy(
+                        loss += F.binary_cross_entropy_with_logits(
                             pred[i].reshape(-1, self._num_classes), 
                             label,
                             **ce_kwargs)
