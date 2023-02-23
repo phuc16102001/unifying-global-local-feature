@@ -436,8 +436,8 @@ class ActionSpotDataset(Dataset):
             label_dist = np.zeros((self._clip_len, len(self._class_dict) + 1))
 
             if (self.label_type=='one_hot'):
-                label_dist[range(self._clip_len), ret['label']==1] = l
-                label_dist[range(self._clip_len), mix['label']==1] += 1. - l
+                label_dist[range(self._clip_len), torch.nonzero(ret['label'])] = l
+                label_dist[range(self._clip_len), torch.nonzero(mix['label'])] += 1. - l
             else:
                 label_dist[range(self._clip_len), ret['label']] = l
                 label_dist[range(self._clip_len), mix['label']] += 1. - l
