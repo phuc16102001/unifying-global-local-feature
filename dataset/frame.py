@@ -332,8 +332,6 @@ class ActionSpotDataset(Dataset):
                         self._flat_labels.append((i, event['frame']))
 
         self._mixup = mixup
-        if (self._mixup): 
-            self.label_type = 'integer'
 
         # Try to do defer the latter half of the transforms to the GPU
         self._gpu_transform = None
@@ -436,8 +434,16 @@ class ActionSpotDataset(Dataset):
             mix = self._get_one()    # Sample another clip
             l = random.betavariate(0.2, 0.2)
             label_dist = np.zeros((self._clip_len, len(self._class_dict) + 1))
-            label_dist[range(self._clip_len), ret['label']] = l
-            label_dist[range(self._clip_len), mix['label']] += 1. - l
+
+            if (self.label_type=='one_hot'):
+                for i, lb in enumerate(ret['label']):
+                    if (lb==1): label_dist[range(self._clip_len), i] = l
+                for i, lb in enumerate(mix['label']):
+                    if (lb==1): label_dist[range(self._clip_len), i] += 1. - l
+
+            else:
+                label_dist[range(self._clip_len), ret['label']] = l
+                label_dist[range(self._clip_len), mix['label']] += 1. - l
 
             if self._gpu_transform is None:
                 ret['frame'] = l * ret['frame'] + (1. - l) * mix['frame']
