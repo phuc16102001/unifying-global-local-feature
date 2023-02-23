@@ -227,11 +227,11 @@ class E2EModel(BaseRGBModel):
                 sum(p.numel() for p in self._pred_fine.parameters()))
 
     def __init__(self, num_classes, feature_arch, temporal_arch, clip_len,
-                 modality, device='cuda', multi_gpu=False):
+                 modality, device='cuda', multi_gpu=False, label_type='one_hot'):
         self.device = device
         self._multi_gpu = multi_gpu
         self._model = E2EModel.Impl(
-            num_classes, feature_arch, temporal_arch, clip_len, modality)
+            num_classes, feature_arch, temporal_arch, clip_len, modality, label_type)
         self._model.print_stats()
 
         if multi_gpu:
