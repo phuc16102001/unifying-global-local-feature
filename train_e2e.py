@@ -27,7 +27,7 @@ from util.io import load_json, store_json, store_gz_json, clear_files
 from util.dataset import DATASETS, load_classes
 from util.score import compute_mAPs
 
-EPOCH_NUM_FRAMES = 500_000
+EPOCH_NUM_FRAMES = 50_000
 BASE_NUM_WORKERS = 4
 BASE_NUM_VAL_EPOCHS = 20
 INFERENCE_BATCH_SIZE = 12
@@ -272,10 +272,6 @@ class E2EModel(BaseRGBModel):
                         pred = pred.unsqueeze(0)
 
                     for i in range(pred.shape[0]):
-                        # if (self._label_type=='one_hot'):
-                        #     loss_func = F.binary_cross_entropy_with_logits
-                        #     label = label.float()
-                        # else:
                         loss_func = F.cross_entropy 
                         loss += loss_func(
                             pred[i].reshape(-1, self._num_classes), 
