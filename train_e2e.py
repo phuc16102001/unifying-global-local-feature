@@ -250,9 +250,7 @@ class E2EModel(BaseRGBModel):
             self._model.train()
 
         loss_kwargs = {}
-        if self._label_type == 'one_hot':
-            loss_kwargs['reduction']='mean'
-        elif fg_weight != 1:
+        if (fg_weight != 1 and self._label_type != 'one_hot'):
             loss_kwargs['weight'] = torch.FloatTensor(
                 [1] + [fg_weight] * (self._num_classes - 1)).to(self.device)
 
@@ -274,15 +272,19 @@ class E2EModel(BaseRGBModel):
                         pred = pred.unsqueeze(0)
 
                     for i in range(pred.shape[0]):
-                        if (self._label_type == 'one_hot'):
-                            loss_func = sigmoid_focal_loss
-                        else:
-                            loss_func = F.cross_entropy 
+                        input = pred[i].reshape(-1, self._num_classes)
 
-                        loss += loss_func(
-                            pred[i].reshape(-1, self._num_classes), 
-                            label,
-                            **loss_kwargs)
+                        if (self._label_type == 'one_hot'):
+                            loss += sigmoid_focal_loss(
+                                input, 
+                                label,
+                                reduction='sum',
+                                **loss_kwargs) / input.shape[0] 
+                        else:
+                            loss += F.cross_entropy(
+                                input, 
+                                label,
+                                **loss_kwargs)
 
                 if optimizer is not None:
                     step(optimizer, scaler, loss / acc_grad_iter,
