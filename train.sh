@@ -1,8 +1,8 @@
 export CUDA_VISIBLE_DEVICES=0,2
 python3 train_e2e.py "soccernet" \
 	"/ext_drive/data/soccernet_720p_2fps" \
-	-s "results/BCE_200MF_GRU" \
-	-m "rny002_gsm" \
+	-s "results/800MF_GRU_Focal" \
+	-m "rny008_gsm" \
 	-mgpu \
 	--learning_rate 0.001 \
 	--num_epochs 150 \
