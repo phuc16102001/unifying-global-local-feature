@@ -13,7 +13,7 @@ python3 train_e2e.py "soccernet" \
 	--crop_dim -1 \
 	--label_type "one_hot" \
 	--num_workers 8 \
-	# --mixup \
+	--mixup \
 
 # srun python3 train_e2e.py soccernetv2 soccerNet_outdir -s /cm/archive/kimth1/spot/save_soccernet_p2 -m rny008_gsm -mgpu --num_epochs 50 --batch_size 8 --crop_dim -1 --resume
 # add --resume to train from checkpoint
