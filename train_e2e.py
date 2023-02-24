@@ -28,7 +28,7 @@ from util.dataset import DATASETS, load_classes
 from util.score import compute_mAPs
 from util.losses import sigmoid_focal_loss
 
-EPOCH_NUM_FRAMES = 50_000
+EPOCH_NUM_FRAMES = 500_000
 BASE_NUM_WORKERS = 4
 BASE_NUM_VAL_EPOCHS = 20
 INFERENCE_BATCH_SIZE = 12
@@ -251,7 +251,7 @@ class E2EModel(BaseRGBModel):
 
         loss_kwargs = {}
         if self._label_type == 'one_hot':
-            loss_kwargs['reduction']='mean'
+            loss_kwargs['reduction']='sum'
         elif fg_weight != 1:
             loss_kwargs['weight'] = torch.FloatTensor(
                 [1] + [fg_weight] * (self._num_classes - 1)).to(self.device)

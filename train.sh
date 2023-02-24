@@ -1,4 +1,4 @@
-export CUDA_VISIBLE_DEVICES=0
+export CUDA_VISIBLE_DEVICES=0,2
 python3 train_e2e.py "soccernet" \
 	"/ext_drive/data/soccernet_720p_2fps" \
 	-s "results/BCE_800MF_GRU" \
@@ -9,7 +9,7 @@ python3 train_e2e.py "soccernet" \
 	--start_val_epoch 149 \
 	--temporal_arch "gru" \
 	--warm_up_epochs 3 \
-	--batch_size 6 \
+	--batch_size 12 \
 	--crop_dim -1 \
 	--label_type "one_hot" \
 	--num_workers 8 \
