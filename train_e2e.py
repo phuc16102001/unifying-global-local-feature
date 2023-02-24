@@ -251,7 +251,7 @@ class E2EModel(BaseRGBModel):
 
         loss_kwargs = {}
         if self._label_type == 'one_hot':
-            loss_kwargs['reduction']='sum'
+            loss_kwargs['reduction']='mean'
         elif fg_weight != 1:
             loss_kwargs['weight'] = torch.FloatTensor(
                 [1] + [fg_weight] * (self._num_classes - 1)).to(self.device)
