@@ -26,6 +26,7 @@ from util.eval import process_frame_predictions
 from util.io import load_json, store_json, store_gz_json, clear_files
 from util.dataset import DATASETS, load_classes
 from util.score import compute_mAPs
+from util.losses import sigmoid_focal_loss
 
 EPOCH_NUM_FRAMES = 50_000
 BASE_NUM_WORKERS = 4
@@ -211,10 +212,9 @@ class E2EModel(BaseRGBModel):
                 x.view(-1, channels, height, width)
             ).reshape(batch_size, clip_len, self._feat_dim)
 
+            # Undo padding
             if true_clip_len != clip_len:
-                # Undo padding
                 im_feat = im_feat[:, :true_clip_len, :]
-#            print(im_feat.shape)
 
             return self._pred_fine(im_feat)
 
@@ -273,6 +273,8 @@ class E2EModel(BaseRGBModel):
 
                     for i in range(pred.shape[0]):
                         loss_func = F.cross_entropy 
+                        if (self._label_type == 'one_hot'):
+                            loss_func = sigmoid_focal_loss
                         loss += loss_func(
                             pred[i].reshape(-1, self._num_classes), 
                             label,
