@@ -58,8 +58,13 @@ def main(model_dir, frame_dir, split, no_overlap, save, save_as, dataset, criter
     config_path = os.path.join(model_dir, 'config.json')
     with open(config_path) as fp:
         print(fp.read())
-
     config = load_json(config_path)
+    
+    if (config['label_type']=='one_hot'):
+        high_recall_score_threshold = 0.5
+    else:
+        high_recall_score_threshold = 0.01
+
     if os.path.isfile(os.path.join(model_dir, 'loss.json')):
         best_epoch = get_best_epoch(model_dir, criterion_key)
         print('Best epoch:', best_epoch)
@@ -100,6 +105,7 @@ def main(model_dir, frame_dir, split, no_overlap, save, save_as, dataset, criter
         print('Saving predictions:', pred_file)
 
     evaluate(model, split_data, split.upper(), classes, pred_file,
+             high_recall_score_threshold = high_recall_score_threshold,
              calc_stats=False)
 
 

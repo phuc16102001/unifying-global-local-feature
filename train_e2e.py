@@ -320,6 +320,7 @@ class E2EModel(BaseRGBModel):
 
 
 def evaluate(model, dataset, split, classes, save_pred, calc_stats=True,
+             high_recall_score_threshold = 0.01,
              save_scores=True):
     pred_dict = {}
     for video, video_len, _ in dataset.videos:
@@ -371,7 +372,8 @@ def evaluate(model, dataset, split, classes, save_pred, calc_stats=True,
             support[start:end] += pred_scores.shape[0]
 
     err, f1, pred_events, pred_events_high_recall, pred_scores = \
-        process_frame_predictions(dataset, classes, pred_dict)
+        process_frame_predictions(dataset, classes, pred_dict, 
+                                  high_recall_score_threshold = high_recall_score_threshold)
 
     avg_mAP = None
     if calc_stats:
