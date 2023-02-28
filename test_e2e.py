@@ -20,6 +20,7 @@ def get_args():
                         choices=['train', 'val', 'test', 'challenge'],
                         required=True)
     parser.add_argument('--no_overlap', action='store_true')
+    parser.add_argument('--recall_thresh', type=float, default=0.01)
     parser.add_argument('--criterion_key', choices=['train', 'val', 'val_mAP'], default='val_mAP')
 
     save = parser.add_mutually_exclusive_group()
@@ -60,7 +61,9 @@ def main(model_dir, frame_dir, split, no_overlap, save, save_as, dataset, criter
         print(fp.read())
     config = load_json(config_path)
     
-    if (config['label_type']=='one_hot'):
+    if (config['recall_thresh']):
+        high_recall_score_threshold = config['recall_thresh']
+    elif (config['label_type']=='one_hot'):
         high_recall_score_threshold = 0.5
     else:
         high_recall_score_threshold = 0.01
