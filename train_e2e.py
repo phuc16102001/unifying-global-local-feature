@@ -314,7 +314,7 @@ class E2EModel(BaseRGBModel):
             if (self._label_type=='one_hot'):
                 pred = torch.sigmoid(pred)
             else:
-                pred = torch.softmax(pred)
+                pred = torch.softmax(pred, axis=2)
             pred_cls = torch.argmax(pred, axis=2)
             return pred_cls.cpu().numpy(), pred.cpu().numpy()
 
