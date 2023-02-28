@@ -67,6 +67,7 @@ def main(model_dir, frame_dir, split, no_overlap, save, save_as, dataset, criter
         high_recall_score_threshold = 0.5
     else:
         high_recall_score_threshold = 0.01
+    print("Recall threshold:", high_recall_score_threshold)
 
     if os.path.isfile(os.path.join(model_dir, 'loss.json')):
         best_epoch = get_best_epoch(model_dir, criterion_key)
