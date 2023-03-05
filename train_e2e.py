@@ -28,7 +28,7 @@ from util.dataset import DATASETS, load_classes
 from util.score import compute_mAPs
 from util.losses import sigmoid_focal_loss
 
-EPOCH_NUM_FRAMES = 500_000
+EPOCH_NUM_FRAMES = 5_000
 BASE_NUM_WORKERS = 4
 BASE_NUM_VAL_EPOCHS = 20
 INFERENCE_BATCH_SIZE = 12
@@ -188,7 +188,7 @@ class E2EModel(BaseRGBModel):
                 self._pred_fine = ASFormerPrediction(feat_dim, num_classes, 3)
             elif temporal_arch == 'former':
                 hidden_dim = feat_dim
-                self._pred_fine = VanillaEncoderPrediction(hidden_dim, num_classes, 3)
+                self._pred_fine = VanillaEncoderPrediction(hidden_dim, num_classes, 1)
             elif temporal_arch == '':
                 self._pred_fine = FCPrediction(feat_dim, num_classes)
             else:
