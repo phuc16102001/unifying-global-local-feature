@@ -4,7 +4,7 @@ python3 train_e2e.py "soccernet" \
 	-s "results/800MF_Former" \
 	-m "rny008_gsm" \
 	-mgpu \
-	--learning_rate 0.0001 \
+	--learning_rate 1e-5 \
 	--num_epochs 150 \
 	--start_val_epoch 149 \
 	--temporal_arch "former" \
@@ -12,7 +12,7 @@ python3 train_e2e.py "soccernet" \
 	--batch_size 10 \
 	--clip_len 140 \
 	--crop_dim -1 \
-	--label_type "one-hot" \
+	--label_type "integer" \
 	--num_workers 8 \
 	--mixup \
 
