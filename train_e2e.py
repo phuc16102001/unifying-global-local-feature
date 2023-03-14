@@ -260,6 +260,8 @@ class E2EModel(BaseRGBModel):
             for batch_idx, batch in enumerate(tqdm(loader)):
                 frame = loader.dataset.load_frame_gpu(batch, self.device)
                 label = batch['label'].to(self.device)
+                glip_feat = batch['glip_feature']
+                glip_mask = batch['glip_mask']
 
                 # Depends on whether mixup/one-hot is used
                 label = label.flatten() if len(label.shape) == 2 \
