@@ -41,6 +41,7 @@ def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('dataset', type=str, choices=DATASETS)
     parser.add_argument('frame_dir', type=str, help='Path to extracted frames')
+    parser.add_argument('glip_dir', type=str, default=None, help="Path to extracted GLIP features")
 
     parser.add_argument('--modality', type=str, choices=['rgb', 'bw', 'flow'],
                         default='rgb')
@@ -428,7 +429,9 @@ def get_datasets(args):
 
     dataset_len = EPOCH_NUM_FRAMES // args.clip_len
     dataset_kwargs = {
-        'crop_dim': args.crop_dim, 'dilate_len': args.dilate_len,
+        'crop_dim': args.crop_dim, 
+        'dilate_len': args.dilate_len,
+        'glip_dir': args.glip_dir,
         'mixup': args.mixup
     }
 
@@ -501,6 +504,7 @@ def store_config(file_path, args, num_epochs, classes):
         'epoch_num_frames': EPOCH_NUM_FRAMES,
         'dilate_len': args.dilate_len,
         'mixup': args.mixup,
+        'glip_feature': (args.glip_dir is not None),
         'fg_upsample': args.fg_upsample,
         'label_type': args.label_type
     }

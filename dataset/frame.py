@@ -42,6 +42,7 @@ class FrameReader:
         rand_crop_state = None
         rand_state_backup = None
         ret = []
+        frame_num_list = []
         n_pad_start = 0
         n_pad_end = 0
         for frame_num in range(start, end, stride):
@@ -75,6 +76,7 @@ class FrameReader:
                 if not self._same_transform:
                     img = self._img_transform(img)
                 ret.append(img)
+                frame_num_list.append(frame_num)
             except RuntimeError:
                 # print('Missing file!', frame_path)
                 n_pad_end += 1
@@ -88,7 +90,7 @@ class FrameReader:
         if n_pad_start > 0 or (pad and n_pad_end > 0):
             ret = nn.functional.pad(
                 ret, (0, 0, 0, 0, 0, 0, n_pad_start, n_pad_end if pad else 0))
-        return ret
+        return ret, frame_num_list
 
 
 # Pad the start/end of videos with empty frames
@@ -296,12 +298,14 @@ class ActionSpotDataset(Dataset):
             pad_len=DEFAULT_PAD_LEN,    # Number of frames to pad the start
                                         # and end of videos
             fg_upsample=-1,             # Sample foreground explicitly
-            label_type='one_hot'        # Type of label encoding
+            label_type='one_hot',       # Type of label encoding
+            glip_dir=None               # Path to Glip feature
     ):
         self._src_file = label_file
         self._labels = load_json(label_file)
         self._class_dict = classes
         self._video_idxs = {x['video']: i for i, x in enumerate(self._labels)}
+        self._glip_dir = glip_dir
 
         # Sample videos weighted by their length
         num_frames = [v['num_frames'] for v in self._labels]
@@ -385,6 +389,32 @@ class ActionSpotDataset(Dataset):
         assert base_idx <= frame_idx
         assert base_idx + self._clip_len > frame_idx
         return video_meta, base_idx
+    
+    def load_glip(glip_dir, video_name, frame_num_list):
+        file_name = os.path.join(glip_dir, video_name+'.pt')
+        df = torch.load(file_name)
+        frame_num_list = torch.Tensor(frame_num_list)
+        frame_num = df[:, 0]
+        mask = (((frame_num.view(-1, 1) - frame_num_list.view(-1)) == 0).sum(dim=-1))!=0
+        keep = df[mask]
+
+        ret = {}
+        for row in keep:
+            frame_idx = row[0]
+            class_id = row[1]
+            boxes = row[2:6]
+            feat = row[6:]
+
+            if (frame_idx not in ret):
+                ret[frame_idx] = []
+
+            ret[frame_idx].append({
+                'frame': frame_idx,
+                'class': class_id,
+                'boxes': boxes,
+                'feature': feat
+            })       
+        return ret         
 
     def _get_one(self):
         if self._fg_upsample > 0 and random.random() >= self._fg_upsample:
@@ -419,13 +449,22 @@ class ActionSpotDataset(Dataset):
                     else:
                         labels[i] = label
 
-        frames = self._frame_reader.load_frames(
+        frames, frame_num_list = self._frame_reader.load_frames(
             video_meta['video'], base_idx,
             base_idx + self._clip_len * self._stride, pad=True,
             stride=self._stride, randomize=not self._is_eval)
 
-        return {'frame': frames, 'contains_event': int(np.sum(labels) > 0),
-                'label': labels}
+        glip_feat = None
+        if (self._glip_dir is not None):
+            glip_feat = self.load_glip(
+                self._glip_dir, video_meta['video'], frame_num_list)
+
+        return {
+            'frame': frames, 
+            'contains_event': int(np.sum(labels) > 0),
+            'glip': glip_feat,
+            'label': labels
+        }
 
     def __getitem__(self, unused):
         ret = self._get_one()
