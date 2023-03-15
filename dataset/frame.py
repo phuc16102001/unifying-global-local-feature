@@ -306,7 +306,12 @@ class ActionSpotDataset(Dataset):
         self._labels = load_json(label_file)
         self._class_dict = classes
         self._video_idxs = {x['video']: i for i, x in enumerate(self._labels)}
+        self._mixup = mixup
         self._glip_dir = glip_dir
+
+        if (self._glip_dir is not None and self._mixup):
+            self._mixup = False
+            print("Turn off mixup to use GLIP")
 
         # Sample videos weighted by their length
         num_frames = [v['num_frames'] for v in self._labels]
@@ -336,7 +341,6 @@ class ActionSpotDataset(Dataset):
                     if event['frame'] < x['num_frames']:
                         self._flat_labels.append((i, event['frame']))
 
-        self._mixup = mixup
 
         # Try to do defer the latter half of the transforms to the GPU
         self._gpu_transform = None

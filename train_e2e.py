@@ -170,6 +170,7 @@ class E2EModel(BaseRGBModel):
 
             self._features = features
             self._feat_dim = feat_dim
+            print("Environment feature dim:", feat_dim)
 
             if 'gru' in temporal_arch:
                 hidden_dim = feat_dim
@@ -195,7 +196,11 @@ class E2EModel(BaseRGBModel):
             else:
                 raise NotImplementedError(temporal_arch)
 
-        def forward(self, x):
+        # Forward the input batch
+        # x feature size: batch x frames x channel x height x width
+        # glip feature size: batch x frames x max_object x feat_dim
+        # glip mask size: batch x frames x max_object
+        def forward(self, x, glip_feat=None, glip_mask=None):
             batch_size, true_clip_len, channels, height, width = x.shape
 
             clip_len = true_clip_len
@@ -209,15 +214,20 @@ class E2EModel(BaseRGBModel):
                         x, (0,) * 7 + (self._require_clip_len - true_clip_len,))
                     clip_len = self._require_clip_len
 
-            im_feat = self._features(
+            env_feat = self._features(
                 x.view(-1, channels, height, width)
             ).reshape(batch_size, clip_len, self._feat_dim)
 
             # Undo padding
             if true_clip_len != clip_len:
-                im_feat = im_feat[:, :true_clip_len, :]
+                env_feat = env_feat[:, :true_clip_len, :]
 
-            return self._pred_fine(im_feat)
+            projected_feat = env_feat
+            if (glip_feat):
+                obj_feat = self._fuse(env_feat, glip_feat, glip_mask)    
+
+
+            return self._pred_fine(projected_feat)
 
         def print_stats(self):
             print('Model params:',
@@ -260,15 +270,15 @@ class E2EModel(BaseRGBModel):
             for batch_idx, batch in enumerate(tqdm(loader)):
                 frame = loader.dataset.load_frame_gpu(batch, self.device)
                 label = batch['label'].to(self.device)
-                glip_feat = batch['glip_feature']
-                glip_mask = batch['glip_mask']
+                glip_feat = batch['glip_feature']   # Batch x Frames x Max_objects x Feat_dim
+                glip_mask = batch['glip_mask']      # Batch x Frames x Max_objects
 
                 # Depends on whether mixup/one-hot is used
                 label = label.flatten() if len(label.shape) == 2 \
                     else label.view(-1, label.shape[-1])
 
                 with torch.cuda.amp.autocast():
-                    pred = self._model(frame)
+                    pred = self._model(frame, glip_feat, glip_mask)
 
                     loss = 0.
                     if len(pred.shape) == 3:
