@@ -37,6 +37,10 @@ INFERENCE_BATCH_SIZE = 12
 MAX_GRU_HIDDEN_DIM = 768
 MAX_FORMER_HIDDEN_DIM = 768
 
+# GLIP
+GLIP_DIM = 256
+MAX_OBJ = 35
+
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('dataset', type=str, choices=DATASETS)
@@ -195,6 +199,9 @@ class E2EModel(BaseRGBModel):
                 self._pred_fine = FCPrediction(feat_dim, num_classes)
             else:
                 raise NotImplementedError(temporal_arch)
+            
+            # Object fusion for GLIP
+            self._fuse = ObjectFusion(feat_dim, GLIP_DIM, MAX_OBJ)
 
         # Forward the input batch
         # x feature size: batch x frames x channel x height x width
@@ -214,6 +221,8 @@ class E2EModel(BaseRGBModel):
                         x, (0,) * 7 + (self._require_clip_len - true_clip_len,))
                     clip_len = self._require_clip_len
 
+            # Environment feature
+            # Feature size: batch x frames x feat_dim
             env_feat = self._features(
                 x.view(-1, channels, height, width)
             ).reshape(batch_size, clip_len, self._feat_dim)

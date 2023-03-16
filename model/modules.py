@@ -89,3 +89,22 @@ class VanillaEncoderPrediction(nn.Module):
         e_out = self._encoder(src)
         out = self._out(self._dropout(e_out))
         return out
+    
+class ObjectFusion(nn.Module):
+    def __init__(self, env_dim, obj_dim, max_obj):
+        super().__init__()
+        
+        self._env_dim = env_dim
+        self._obj_dim = obj_dim
+        self._max_obj = max_obj
+
+        self._fc_in = nn.Linear(obj_dim, env_dim)
+
+
+    # Fuse object feature to environment feature
+    # env feature size: batch x frames x env_dim
+    # obj feature size: batch x frames x max_obj x obj_dim
+    # obj mask size: batch x frames x max_obj
+    def forward(self, env_feat, obj_feat, obj_mask):
+        projected_obj = self._fc_in(obj_feat)
+        

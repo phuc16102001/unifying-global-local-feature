@@ -300,7 +300,8 @@ class ActionSpotDataset(Dataset):
                                         # and end of videos
             fg_upsample=-1,             # Sample foreground explicitly
             label_type='one_hot',       # Type of label encoding
-            glip_dir=None               # Path to Glip feature
+            glip_dir=None,              # Path to Glip feature
+            max_object=35               # Maximum object in GLIP feat
     ):
         self._src_file = label_file
         self._labels = load_json(label_file)
@@ -308,6 +309,7 @@ class ActionSpotDataset(Dataset):
         self._video_idxs = {x['video']: i for i, x in enumerate(self._labels)}
         self._mixup = mixup
         self._glip_dir = glip_dir
+        self._max_object = max_object
 
         if (self._glip_dir is not None and self._mixup):
             self._mixup = False
@@ -395,9 +397,12 @@ class ActionSpotDataset(Dataset):
         assert base_idx + self._clip_len > frame_idx
         return video_meta, base_idx
     
-    def load_glip(glip_dir, video_name, frame_num_list, max_object = 35):
+    def load_glip(self, glip_dir, video_name, frame_num_list):
+        max_object = self._max_object
+
         file_name = os.path.join(glip_dir, video_name+'.pt')
         df = torch.load(file_name)
+        
         frame_num_list = torch.Tensor(frame_num_list)
         frame_num = df[:, 0]
         mask = (((frame_num.view(-1, 1) - frame_num_list.view(-1)) == 0).sum(dim=-1))!=0
@@ -405,8 +410,8 @@ class ActionSpotDataset(Dataset):
 
         feat_dict = {}
         for row in keep:
-            frame_idx = row[0]
-            class_id = row[1]
+            frame_idx = int(row[0].item())
+            class_id = int(row[1].item())
             boxes = row[2:6]
             feat = row[6:]
 
@@ -434,7 +439,8 @@ class ActionSpotDataset(Dataset):
         mask = []
         for frame_num in frame_num_list:
             frame_feat = []
-            for obj in feat_dict[frame_num]:
+            num = int(frame_num.item())
+            for obj in feat_dict[num]:
                 frame_feat.append(obj['feature'])
             assert len(frame_feat) <= max_object, 'GLIP objects are exceeded'
             
@@ -442,7 +448,7 @@ class ActionSpotDataset(Dataset):
                 (torch.ones(len(frame_feat)), torch.zeros(max_object - len(frame_feat)))
             )
 
-            frame_feat = torch.Tensor(frame_feat)
+            frame_feat = torch.stack(frame_feat)
             frame_feat = F.pad(frame_feat, (0, 0, 0, max_object - len(frame_feat)))
             
             ret.append(frame_feat)
