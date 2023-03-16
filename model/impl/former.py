@@ -63,15 +63,15 @@ class FeedForward(nn.Module):
         return x
 
 class EncoderLayer(nn.Module):
-    def __init__(self, d_model, heads, dim_ff=2048, dropout=0.1):
+    def __init__(self, d_model, heads, d_ff=2048, dropout=0.1):
         super().__init__()
         self.attn = nn.MultiheadAttention(d_model, heads, batch_first=True, dropout=dropout)
         
         self.norm_1 = Norm(d_model)
         self.norm_2 = Norm(d_model)
 
-        self.ff_1 = FeedForward(d_model, dim_ff, dropout=dropout)
-        self.ff_2 = FeedForward(d_model, dim_ff, dropout=dropout)
+        self.ff_1 = FeedForward(d_model, d_ff=d_ff, dropout=dropout)
+        self.ff_2 = FeedForward(d_model, d_ff=d_ff, dropout=dropout)
     
         self.dropout_1 = nn.Dropout(dropout)
         self.dropout_2 = nn.Dropout(dropout)
