@@ -81,7 +81,7 @@ class EncoderLayer(nn.Module):
         x_attn = self.attn(x, x, x, 
                            attn_mask=mask, key_padding_mask=key_padding_mask)[0]
         if (key_padding_mask is not None):
-            x_attn = x_attn.masked_fill(key_padding_mask, 0)
+            x_attn = x_attn.masked_fill(key_padding_mask.unsqueeze(-1), 0)
         x = x + self.dropout_1(x_attn)
         x = self.norm_1(x)
 
@@ -93,7 +93,7 @@ class EncoderLayer(nn.Module):
         x = x + self.dropout_3(x_linear)
         x = self.norm_2(x)
         if (key_padding_mask is not None):
-            x = x.masked_fill(key_padding_mask, 0)
+            x = x.masked_fill(key_padding_mask.unsqueeze(-1), 0)
 
         return x
 
