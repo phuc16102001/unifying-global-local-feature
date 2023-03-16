@@ -32,7 +32,7 @@ class PositionalEncoder(nn.Module):
         x = self.dropout(x)
         return x
 
-def attention(q, k, v, dropout=None):
+def attention(q, k, v, mask=None, dropout=None):
     """
     q: batch x head x seq_len x d_model
     k: batch x head x seq_len x d_model
@@ -43,6 +43,11 @@ def attention(q, k, v, dropout=None):
     """
     d_k = q.size(-1) # last dimension
     scores = torch.matmul(q, k.transpose(-2, -1))/math.sqrt(d_k) # batch x head x seq_len x seq_len
+    
+    # Masking
+    if (mask is not None):
+        mask = mask.unsqueeze(1)
+        scores = scores.masked_fill(mask==0, -1e9)
     
     # Softmax will convert all -inf to 0
     scores = F.softmax(scores, dim = -1) # Softmax over last dimension
@@ -68,7 +73,7 @@ class MultiHeadAttention(nn.Module):
         self.w_v = nn.Linear(d_model, d_model)
         self.out = nn.Linear(d_model, d_model)
         
-    def forward(self, q, k, v):
+    def forward(self, q, k, v, mask):
         """
         q: bs x seq_len x d_model
         k: bs x seq_len x d_model
@@ -85,7 +90,7 @@ class MultiHeadAttention(nn.Module):
         v = v.transpose(1, 2)
 
         # Attention mechanism
-        output_attn, self.scores = attention(q, k, v, self.dropout)
+        output_attn, self.scores = attention(q, k, v, mask, self.dropout)
         
         concatenate_tensor = output_attn.transpose(1, 2).contiguous().view(bs, -1, self.d_model)
         output = self.out(concatenate_tensor)
@@ -133,9 +138,9 @@ class EncoderLayer(nn.Module):
         self.dropout_1 = nn.Dropout(dropout)
         self.dropout_2 = nn.Dropout(dropout)
         
-    def forward(self, x):
+    def forward(self, x, mask):
         x_norm = self.norm_1(x)
-        x_attn = self.attn(x_norm, x_norm, x_norm)
+        x_attn = self.attn(x_norm, x_norm, x_norm, mask)
         
         x = x + self.dropout_1(x_attn)
         x_norm = self.norm_2(x)
@@ -156,26 +161,12 @@ class Encoder(nn.Module):
         
         self.n = n
         self.pe = PositionalEncoder(d_model, dropout=dropout)
-        self.encoder_layers = get_clones(
-            EncoderLayer(d_model, heads, dropout),
-            n
-        )
+        self.encoder_layers = get_clones(EncoderLayer(d_model, heads, dropout), n)
         self.norm = Norm(d_model)
     
-    def forward(self, x):
+    def forward(self, x, mask):
         x = self.pe(x)
         for i in range(self.n):
-            x = self.encoder_layers[i](x)
+            x = self.encoder_layers[i](x, mask)
         x = self.norm(x)
         return x
-
-class VanillaEncoderPrediction(nn.Module):
-    def __init__(self, hidden_dim, num_classes, num_encoders=3, heads=8, dropout=0.1):
-        super().__init__()
-        self.encoder = Encoder(hidden_dim, num_encoders, heads, dropout)
-        self.out = nn.Linear(hidden_dim, num_classes)
-        
-    def forward(self, src):
-        e_out = self.encoder(src)
-        out = self.out(e_out)
-        return out
