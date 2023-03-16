@@ -116,9 +116,10 @@ class E2EModel(BaseRGBModel):
     class Impl(nn.Module):
 
         def __init__(self, num_classes, feature_arch, temporal_arch, clip_len,
-                     modality, label_type):
+                    glip_feature, modality, label_type):
             super().__init__()
             self._label_type = label_type
+            self._glip_feature = glip_feature
             is_rgb = modality == 'rgb'
             in_channels = {'flow': 2, 'bw': 1, 'rgb': 3}[modality]
 
@@ -201,7 +202,8 @@ class E2EModel(BaseRGBModel):
                 raise NotImplementedError(temporal_arch)
             
             # Object fusion for GLIP
-            self._fuse = ObjectFusion(feat_dim, feat_dim, GLIP_DIM, feat_dim, MAX_OBJ)
+            if (self._glip_feature):
+                self._fuse = ObjectFusion(feat_dim, feat_dim, GLIP_DIM, feat_dim, MAX_OBJ)
 
         # Forward the input batch
         # x feature size: batch x frames x channel x height x width
@@ -247,11 +249,12 @@ class E2EModel(BaseRGBModel):
                 sum(p.numel() for p in self._pred_fine.parameters()))
 
     def __init__(self, num_classes, feature_arch, temporal_arch, clip_len,
-                 modality, device='cuda', multi_gpu=False, label_type='one_hot'):
+                 glip_feature, modality, device='cuda', multi_gpu=False, label_type='one_hot'):
         self.device = device
         self._multi_gpu = multi_gpu
+        self._glip_feature = glip_feature
         self._model = E2EModel.Impl(
-            num_classes, feature_arch, temporal_arch, clip_len, modality, label_type)
+            num_classes, feature_arch, temporal_arch, clip_len, glip_feature, modality, label_type)
         self._model.print_stats()
 
         if multi_gpu:
@@ -279,9 +282,14 @@ class E2EModel(BaseRGBModel):
             for batch_idx, batch in enumerate(tqdm(loader)):
                 frame = loader.dataset.load_frame_gpu(batch, self.device)
                 label = batch['label'].to(self.device)
-                glip_feat = batch['glip_feature']   # Batch x Frames x Max_objects x Feat_dim
-                glip_mask = batch['glip_mask']      # Batch x Frames x Max_objects
 
+                if (self._glip_feature):
+                    glip_feat = batch['glip_feature']   # Batch x Frames x Max_objects x Feat_dim
+                    glip_mask = batch['glip_mask']      # Batch x Frames x Max_objects
+                else:
+                    glip_feat = None
+                    glip_mask = None
+                    
                 # Depends on whether mixup/one-hot is used
                 label = label.flatten() if len(label.shape) == 2 \
                     else label.view(-1, label.shape[-1])
@@ -577,6 +585,7 @@ def main(args):
 
     model = E2EModel(
         len(classes) + 1, args.feature_arch, args.temporal_arch,
+        glip_feature = (args.glip_dir is not None),
         clip_len=args.clip_len, modality=args.modality,
         multi_gpu=args.gpu_parallel, label_type=args.label_type)
     optimizer, scaler = model.get_optimizer({'lr': args.learning_rate})
