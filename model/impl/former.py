@@ -3,8 +3,7 @@ import torch.nn as nn
 from torch.autograd import Variable
 import torch.nn.functional as F
 import math
-import copy
-
+from ...util.utils import masked_softmax, get_clones
 class PositionalEncoder(nn.Module):
     def __init__(self, d_model, max_seq_length = 200, dropout = 0.1):
         super().__init__()
@@ -46,11 +45,8 @@ def attention(q, k, v, mask=None, dropout=None):
     
     # Masking
     if (mask is not None):
-        mask = mask.unsqueeze(1)
-        scores = scores.masked_fill(mask==0, -1e9)
-    
-    # Softmax will convert all -inf to 0
-    scores = F.softmax(scores, dim = -1) # Softmax over last dimension
+        mask = mask.unsqueeze(1)            # batch x 1 x 1 x seq_len
+    scores = masked_softmax(scores, mask)
     
     if (dropout is not None):
         scores = dropout(scores)
@@ -148,12 +144,6 @@ class EncoderLayer(nn.Module):
 
         x = x + self.dropout_2(x_ff)
         return x
-
-def get_clones(module, n):
-    module_list = []
-    for _ in range(n):
-        module_list.append(copy.deepcopy(module))
-    return nn.ModuleList(module_list)
 
 class Encoder(nn.Module):
     def __init__(self, d_model, n, heads, dropout=0.1):
