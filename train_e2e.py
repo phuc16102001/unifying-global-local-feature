@@ -45,7 +45,7 @@ def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('dataset', type=str, choices=DATASETS)
     parser.add_argument('frame_dir', type=str, help='Path to extracted frames')
-    parser.add_argument('glip_dir', type=str, default=None, help="Path to extracted GLIP features")
+    parser.add_argument('glip_dir', type=str, default=None, help="Path to extracted GLIP features", required=False)
 
     parser.add_argument('--modality', type=str, choices=['rgb', 'bw', 'flow'],
                         default='rgb')

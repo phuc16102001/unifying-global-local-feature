@@ -12,7 +12,7 @@ python3 train_e2e.py "soccernet" \
 	--batch_size 10 \
 	--clip_len 100 \
 	--crop_dim -1 \
-	--label_type "one-hot" \
+	--label_type "one_hot" \
 	--num_workers 4 \
 	--mixup 
 #	--glip_dir "/ext_drive/data/glip_feat" \
