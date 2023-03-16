@@ -201,7 +201,7 @@ class E2EModel(BaseRGBModel):
                 raise NotImplementedError(temporal_arch)
             
             # Object fusion for GLIP
-            self._fuse = ObjectFusion(feat_dim, GLIP_DIM, MAX_OBJ)
+            self._fuse = ObjectFusion(feat_dim, feat_dim, GLIP_DIM, feat_dim, MAX_OBJ)
 
         # Forward the input batch
         # x feature size: batch x frames x channel x height x width
