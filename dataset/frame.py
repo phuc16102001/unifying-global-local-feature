@@ -501,13 +501,22 @@ class ActionSpotDataset(Dataset):
             glip_feat, glip_mask = self.load_glip(
                 self._glip_dir, video_meta['video'], frame_num_list)
 
-        return {
-            'frame': frames, 
-            'contains_event': int(np.sum(labels) > 0),
-            'glip_feature': glip_feat,  # frame x obj x feat
-            'glip_mask': glip_mask,
-            'label': labels
-        }
+        if (glip_feat is not None):
+            ret = {
+                'frame': frames, 
+                'contains_event': int(np.sum(labels) > 0),
+                'glip_feature': glip_feat,  # frame x obj x feat
+                'glip_mask': glip_mask,
+                'label': labels
+            }
+        else:
+            ret = {
+                'frame': frames, 
+                'contains_event': int(np.sum(labels) > 0),
+                'label': labels
+            }
+        return ret
+        
 
     def __getitem__(self, unused):
         ret = self._get_one()

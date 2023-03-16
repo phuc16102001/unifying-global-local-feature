@@ -9,7 +9,7 @@ python3 train_e2e.py "soccernet" \
 	--start_val_epoch 149 \
 	--temporal_arch "former" \
 	--warm_up_epochs 3 \
-	--batch_size 10 \
+	--batch_size 4 \
 	--clip_len 100 \
 	--crop_dim -1 \
 	--label_type "one_hot" \
