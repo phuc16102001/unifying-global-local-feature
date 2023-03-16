@@ -88,13 +88,11 @@ class VanillaEncoderPrediction(nn.Module):
         
     def forward(self, x):
         
-        # Forward with mask
+        # Forward without mask
         # x: batch x frames x dim
-        # mask: batch x 1 x frames
+        # mask: None
 
-        B, T, D = x.shape
-        mask = torch.ones((B, 1, T), device=x.device)
-        e_out = self._encoder(x, mask)
+        e_out = self._encoder(x)
         out = self._out(self._dropout(e_out))
         return out
     
@@ -163,14 +161,12 @@ class ObjectFusion(nn.Module):
             fuser_input = obj_feat[:, begin:end].contiguous().view(-1, max_obj, hidden_dim)
 
             if (len(keep_idx)>0):
-                fuser_input = fuser_input[keep_idx]      # batch x max_obj x hidden_dim
+                fuser_input = fuser_input[keep_idx]         # batch x max_obj x hidden_dim
                 hard_attn_mask = hard_attn_mask[keep_idx]   # batch x max_obj
-
-                # TODO: verify what is pad key?
 
                 # Pass to encoder
                 # Output: batch x max_obj x hidden_dim
-                fuser_output = self._obj_fuser(fuser_input, hard_attn_mask)
+                fuser_output = self._obj_fuser(fuser_input, key_padding_mask=hard_attn_mask)
 
                 # Normalize result over objects
                 fuser_output = torch.sum(fuser_output, dim=1) / torch.sum(hard_attn_mask, dim=-1, keepDim=True)

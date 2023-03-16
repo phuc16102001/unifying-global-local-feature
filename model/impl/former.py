@@ -31,67 +31,6 @@ class PositionalEncoder(nn.Module):
         x = self.dropout(x)
         return x
 
-def attention(q, k, v, mask=None, dropout=None):
-    """
-    q: batch x head x seq_len x d_model
-    k: batch x head x seq_len x d_model
-    v: batch x head x seq_len x d_model
-
-    mask: batch x 1 x seq_len
-    output: batch x head x seq_len x d_model
-    """
-    d_k = q.size(-1) # last dimension
-    scores = torch.matmul(q, k.transpose(-2, -1))/math.sqrt(d_k) # batch x head x seq_len x seq_len
-    
-    # Masking
-    if (mask is not None):
-        mask = mask.unsqueeze(1)            # batch x 1 x 1 x seq_len
-    scores = masked_softmax(scores, mask)
-    
-    if (dropout is not None):
-        scores = dropout(scores)
-    
-    output = torch.matmul(scores, v)
-    return output, scores
-
-class MultiHeadAttention(nn.Module):
-    def __init__(self, heads, d_model, dropout = 0.1):
-        super().__init__()
-        assert(d_model % heads == 0)
-        
-        self.d_model = d_model
-        self.heads = heads
-        self.d_k = d_model//heads # In order to d_k.heads = d_model
-        
-        self.dropout = nn.Dropout(dropout)
-        self.w_q = nn.Linear(d_model, d_model)
-        self.w_k = nn.Linear(d_model, d_model)
-        self.w_v = nn.Linear(d_model, d_model)
-        self.out = nn.Linear(d_model, d_model)
-        
-    def forward(self, q, k, v, mask):
-        """
-        q: bs x seq_len x d_model
-        k: bs x seq_len x d_model
-        v: bs x seq_len x d_model
-        """
-        
-        bs = q.size(0)
-        q = self.w_q(q).view(bs, -1, self.heads, self.d_k)
-        k = self.w_k(k).view(bs, -1, self.heads, self.d_k)
-        v = self.w_v(v).view(bs, -1, self.heads, self.d_k)
-        
-        q = q.transpose(1, 2)
-        k = k.transpose(1, 2)        
-        v = v.transpose(1, 2)
-
-        # Attention mechanism
-        output_attn, self.scores = attention(q, k, v, mask, self.dropout)
-        
-        concatenate_tensor = output_attn.transpose(1, 2).contiguous().view(bs, -1, self.d_model)
-        output = self.out(concatenate_tensor)
-        return output
-
 class Norm(nn.Module):
     def __init__(self, d_model, eps = 1e-6):
         super().__init__()
@@ -124,39 +63,58 @@ class FeedForward(nn.Module):
         return x
 
 class EncoderLayer(nn.Module):
-    def __init__(self, d_model, heads, dropout=0.1):
+    def __init__(self, d_model, heads, dim_ff=2048, dropout=0.1):
         super().__init__()
-        self.attn = MultiHeadAttention(heads, d_model, dropout)
+        self.attn = nn.MultiheadAttention(d_model, heads, batch_first=True, dropout=dropout)
+        
         self.norm_1 = Norm(d_model)
-        self.ff = FeedForward(d_model, dropout=dropout)
         self.norm_2 = Norm(d_model)
+
+        self.ff_1 = FeedForward(dim_ff, dropout=dropout)
+        self.ff_2 = FeedForward(dim_ff, dropout=dropout)
     
         self.dropout_1 = nn.Dropout(dropout)
         self.dropout_2 = nn.Dropout(dropout)
+        self.dropout_3 = nn.Dropout(dropout)
         
-    def forward(self, x, mask):
-        x_norm = self.norm_1(x)
-        x_attn = self.attn(x_norm, x_norm, x_norm, mask)
-        
+    def forward(self, x, mask=None, key_padding_mask=None):
+        x_attn = self.attn(x, x, x, 
+                           attn_mask=mask, key_padding_mask=key_padding_mask)
+        if (key_padding_mask is not None):
+            x_attn = x_attn.masked_fill(key_padding_mask, 0)
         x = x + self.dropout_1(x_attn)
-        x_norm = self.norm_2(x)
-        x_ff = self.ff(x_norm)
+        x = self.norm_1(x)
 
-        x = x + self.dropout_2(x_ff)
+        x_linear = self.ff_1(x)
+        x_linear = F.relu(x_linear)
+        x_linear = self.dropout_2(x_linear)
+        x_linear = self.ff_2(x_linear)
+
+        x = x + self.dropout_3(x_linear)
+        x = self.norm_2(x)
+        if (key_padding_mask is not None):
+            x = x.masked_fill(key_padding_mask, 0)
+
         return x
 
 class Encoder(nn.Module):
-    def __init__(self, d_model, n, heads, dropout=0.1):
+    def __init__(self, d_model, n, heads, use_pe=True, dropout=0.1):
         super().__init__()
         
-        self.n = n
-        self.pe = PositionalEncoder(d_model, dropout=dropout)
+        self._n = n
+    
+        self._use_pe = use_pe
+        if (use_pe):
+           self.pe = PositionalEncoder(d_model, dropout=dropout)
+    
         self.encoder_layers = get_clones(EncoderLayer(d_model, heads, dropout), n)
         self.norm = Norm(d_model)
     
-    def forward(self, x, mask):
-        x = self.pe(x)
+    def forward(self, x, mask=None, key_padding_mask=None):
+        if (self._use_pe):
+            x = self.pe(x)
         for i in range(self.n):
-            x = self.encoder_layers[i](x, mask)
+            x = self.encoder_layers[i](
+                x, mask=mask, key_padding_mask=key_padding_mask)
         x = self.norm(x)
         return x
