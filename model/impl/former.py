@@ -70,8 +70,8 @@ class EncoderLayer(nn.Module):
         self.norm_1 = Norm(d_model)
         self.norm_2 = Norm(d_model)
 
-        self.ff_1 = FeedForward(dim_ff, dropout=dropout)
-        self.ff_2 = FeedForward(dim_ff, dropout=dropout)
+        self.ff_1 = FeedForward(d_model, dim_ff, dropout=dropout)
+        self.ff_2 = FeedForward(d_model, dim_ff, dropout=dropout)
     
         self.dropout_1 = nn.Dropout(dropout)
         self.dropout_2 = nn.Dropout(dropout)
