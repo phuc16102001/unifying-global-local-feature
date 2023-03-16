@@ -107,7 +107,7 @@ class Encoder(nn.Module):
         if (use_pe):
            self.pe = PositionalEncoder(d_model, dropout=dropout)
     
-        self.encoder_layers = get_clones(EncoderLayer(d_model, heads, dropout), n)
+        self.encoder_layers = get_clones(EncoderLayer(d_model, heads, dropout=dropout), n)
         self.norm = Norm(d_model)
     
     def forward(self, x, mask=None, key_padding_mask=None):
