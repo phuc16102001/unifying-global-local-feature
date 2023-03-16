@@ -3,7 +3,7 @@ import torch.nn as nn
 from torch.autograd import Variable
 import torch.nn.functional as F
 import math
-from ...util.utils import masked_softmax, get_clones
+from ..utils import masked_softmax, get_clones
 class PositionalEncoder(nn.Module):
     def __init__(self, d_model, max_seq_length = 200, dropout = 0.1):
         super().__init__()
