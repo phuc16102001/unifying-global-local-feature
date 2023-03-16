@@ -203,7 +203,11 @@ class E2EModel(BaseRGBModel):
             
             # Object fusion for GLIP
             if (self._glip_feature):
-                self._fuse = ObjectFusion(feat_dim, feat_dim, GLIP_DIM, feat_dim, MAX_OBJ)
+                self._fuse = ObjectFusion(
+                    feat_dim, GLIP_DIM, 
+                    hidden_dim=feat_dim, 
+                    num_encoders=1, heads=8,
+                    max_obj=MAX_OBJ)
 
         # Forward the input batch
         # x feature size: batch x frames x channel x height x width
@@ -235,7 +239,7 @@ class E2EModel(BaseRGBModel):
 
             projected_feat = env_feat
             if (glip_feat):
-                obj_feat = self._fuse(env_feat, glip_feat, glip_mask)    
+                obj_feat = self._fuse(env_feat, glip_feat, glip_mask)
 
 
             return self._pred_fine(projected_feat)
@@ -289,7 +293,7 @@ class E2EModel(BaseRGBModel):
                 else:
                     glip_feat = None
                     glip_mask = None
-                    
+
                 # Depends on whether mixup/one-hot is used
                 label = label.flatten() if len(label.shape) == 2 \
                     else label.view(-1, label.shape[-1])

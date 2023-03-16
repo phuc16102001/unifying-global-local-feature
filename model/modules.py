@@ -6,6 +6,7 @@ import torch.nn.functional as F
 from .common import SingleStageTCN
 from .impl.asformer import MyTransformer
 from .impl.former import Encoder
+from .utils import masked_softmax
 
 
 class FCPrediction(nn.Module):
@@ -98,24 +99,87 @@ class VanillaEncoderPrediction(nn.Module):
         return out
     
 class ObjectFusion(nn.Module):
-    def __init__(self, env_dim, env_hidden_dim, obj_dim, obj_hidden_dim, max_obj):
+    def __init__(self, 
+                 env_dim, obj_dim, 
+                 hidden_dim,
+                 num_encoders, heads,
+                 max_obj, dropout=0.1):
         super().__init__()
-        
+
         self._env_dim = env_dim
-        self._env_hidden_dim = env_hidden_dim
         self._obj_dim = obj_dim
-        self._obj_hidden_dim = obj_hidden_dim
+        self.hidden_dim = hidden_dim
         self._max_obj = max_obj
 
-        self._env_linear = nn.Linear(env_dim, env_hidden_dim)
-        self._obj_linear = nn.Linear(obj_dim, obj_hidden_dim)
+        self._env_linear = nn.Linear(env_dim, hidden_dim)
+        self._obj_linear = nn.Linear(obj_dim, hidden_dim)
+        self._obj_fuser = Encoder(hidden_dim, num_encoders, heads, dropout)
 
     def fuse_obj(self, env_feat, obj_feat, obj_mask):
-        batch_size, clip_len, max_obj, hidden_dim = obj_feat.size()
+        assert(env_feat.size()[-1] == obj_feat.size()[-1]), \
+            'Hidden dimension of environment and object must be the same'
+        
+        batch_size, frames, max_obj, hidden_dim = obj_feat.size()
 
         # Broadcast all env feat to obj feat
         obj_env_feat = torch.unsqueeze(env_feat, 2) + obj_feat  
+        obj_fused_feat = torch.zeros(batch_size, frames, hidden_dim).cuda()
+        if (max_obj == 0):
+            return obj_fused_feat
+        
+        # Step each frame
+        for begin in range(0, frames):
+            end = begin + 1
 
+            # Single frame: batch x max_obj x dim
+            # Single mask: batch x max_obj
+            frame_oe_feat = obj_env_feat[:, begin:end].contiguous().view(-1, max_obj, hidden_dim)
+            mask = obj_mask[:, begin:end].contiguous().view(-1, max_obj)
+
+            # Hard-attention mask
+            l2_norm = torch.norm(frame_oe_feat, dim=-1)     # score: batch x max_obj
+            l2_norm_softmax = masked_softmax(l2_norm, mask) # softmax: batch x max_obj
+
+            # Adaptive threshold = 1/nObject
+            # Output: batch
+            adaptive_thresh = torch.clamp(1. / torch.sum(mask, dim=-1, keepdim=True), 0., 1.)
+
+            # Create mask for hard-attn
+            # Output: batch x max_obj
+            hard_attn_mask = l2_norm_softmax >= adaptive_thresh
+
+            # TODO: double check why keep dim in batch, not object?
+
+            # Choose batch to keep
+            # Output: batch
+            keep_mask = (torch.sum(hard_attn_mask, dim=-1) > 0)
+            keep_idx = torch.masked_select(
+                torch.arange(hard_attn_mask.size(0)).cuda(),
+                keep_mask
+            )
+
+            # Get object feature
+            # Output: max_obj x batch x hidden_dim
+            fuser_input = obj_feat[:, begin:end].contiguous().view(-1, max_obj, hidden_dim)
+
+            if (len(keep_idx)>0):
+                fuser_input = fuser_input[keep_idx]      # batch x max_obj x hidden_dim
+                hard_attn_mask = hard_attn_mask[keep_idx]   # batch x max_obj
+
+                # TODO: verify what is pad key?
+
+                # Pass to encoder
+                # Output: batch x max_obj x hidden_dim
+                fuser_output = self._obj_fuser(fuser_input, hard_attn_mask)
+
+                # Normalize result over objects
+                fuser_output = torch.sum(fuser_output, dim=1) / torch.sum(hard_attn_mask, dim=-1, keepDim=True)
+
+                padded_output = torch.zeros(batch_size, hidden_dim).cuda()
+                padded_output[keep_idx] = fuser_output
+                obj_fused_feat[:, begin:end] = padded_output.view(batch_size, -1, hidden_dim)
+        
+        return obj_fused_feat
 
     # Fuse object feature to environment feature
     # env feature size: batch x frames x env_dim
@@ -124,4 +188,6 @@ class ObjectFusion(nn.Module):
     def forward(self, env_feat, obj_feat, obj_mask):
         env_feat = self._env_linear(env_feat)
         obj_feat = self._obj_linear(obj_feat)
+        obj_fused_feat = self.fuse_obj(env_feat, obj_feat, obj_mask)
         
+        stacked_feat = torch.stack([env_feat, obj_fused_feat], dim=2)
