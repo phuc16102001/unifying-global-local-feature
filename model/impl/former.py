@@ -107,13 +107,14 @@ class Encoder(nn.Module):
         if (use_pe):
            self.pe = PositionalEncoder(d_model, dropout=dropout)
     
-        self.encoder_layers = get_clones(EncoderLayer(d_model, heads, dropout=dropout), n)
+        self.encoder_layers = get_clones(
+            EncoderLayer(d_model, heads, dropout=dropout), self._n)
         self.norm = Norm(d_model)
     
     def forward(self, x, mask=None, key_padding_mask=None):
         if (self._use_pe):
             x = self.pe(x)
-        for i in range(self.n):
+        for i in range(self._n):
             x = self.encoder_layers[i](
                 x, mask=mask, key_padding_mask=key_padding_mask)
         x = self.norm(x)
