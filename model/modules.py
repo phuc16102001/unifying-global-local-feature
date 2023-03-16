@@ -85,20 +85,36 @@ class VanillaEncoderPrediction(nn.Module):
         self._out = nn.Linear(hidden_dim, num_classes)
         self._dropout = nn.Dropout()
         
-    def forward(self, src):
-        e_out = self._encoder(src)
+    def forward(self, x):
+        
+        # Forward with mask
+        # x: batch x frames x dim
+        # mask: batch x 1 x frames
+
+        B, T, D = x.shape
+        mask = torch.ones((B, 1, T), device=x.device)
+        e_out = self._encoder(x, mask)
         out = self._out(self._dropout(e_out))
         return out
     
 class ObjectFusion(nn.Module):
-    def __init__(self, env_dim, obj_dim, max_obj):
+    def __init__(self, env_dim, env_hidden_dim, obj_dim, obj_hidden_dim, max_obj):
         super().__init__()
         
         self._env_dim = env_dim
+        self._env_hidden_dim = env_hidden_dim
         self._obj_dim = obj_dim
+        self._obj_hidden_dim = obj_hidden_dim
         self._max_obj = max_obj
 
-        self._fc_in = nn.Linear(obj_dim, env_dim)
+        self._env_linear = nn.Linear(env_dim, env_hidden_dim)
+        self._obj_linear = nn.Linear(obj_dim, obj_hidden_dim)
+
+    def fuse_obj(self, env_feat, obj_feat, obj_mask):
+        batch_size, clip_len, max_obj, hidden_dim = obj_feat.size()
+
+        # Broadcast all env feat to obj feat
+        obj_env_feat = torch.unsqueeze(env_feat, 2) + obj_feat  
 
 
     # Fuse object feature to environment feature
@@ -106,5 +122,6 @@ class ObjectFusion(nn.Module):
     # obj feature size: batch x frames x max_obj x obj_dim
     # obj mask size: batch x frames x max_obj
     def forward(self, env_feat, obj_feat, obj_mask):
-        projected_obj = self._fc_in(obj_feat)
+        env_feat = self._env_linear(env_feat)
+        obj_feat = self._obj_linear(obj_feat)
         
