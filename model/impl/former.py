@@ -78,9 +78,8 @@ class EncoderLayer(nn.Module):
         self.dropout_3 = nn.Dropout(dropout)
         
     def forward(self, x, mask=None, key_padding_mask=None):
-        print(key_padding_mask.size())
         x_attn = self.attn(x, x, x, 
-                           attn_mask=mask, key_padding_mask=key_padding_mask)[0]
+                           attn_mask=mask, key_padding_mask=key_padding_mask)[1]
         if (key_padding_mask is not None):
             x_attn = x_attn.masked_fill(key_padding_mask.unsqueeze(-1), 0)
         x = x + self.dropout_1(x_attn)
