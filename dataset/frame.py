@@ -453,7 +453,7 @@ class ActionSpotDataset(Dataset):
             
             ret.append(frame_feat)
             mask.append(frame_mask)
-        ret = torch.stack(ret)
+        ret = torch.stack(ret)/100
         mask = torch.stack(mask)
         return ret, mask
 
