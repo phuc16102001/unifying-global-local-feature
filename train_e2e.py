@@ -240,6 +240,7 @@ class E2EModel(BaseRGBModel):
             projected_feat = env_feat
             if (self._glip_feature):
                 projected_feat = self._fuse(env_feat, glip_feat, glip_mask)
+                print(projected_feat.size())
 
             return self._pred_fine(projected_feat)
 
