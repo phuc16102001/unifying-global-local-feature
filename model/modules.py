@@ -195,15 +195,11 @@ class ObjectFusion(nn.Module):
     # obj mask size: batch x frames x max_obj
     # project feature size: batch x frames x hidden_dim
     def forward(self, env_feat, obj_feat, obj_mask):
-        print("Env 1", env_feat)
-        print("Obj 1",obj_feat)
         env_feat = self._env_linear(env_feat)
         obj_feat = self._obj_linear(obj_feat)
 
         # Fuse object
         # Output: batch x frames x hidden_dim
-        print("Env 2", env_feat)
-        print("Obj 2", obj_feat)
 
         obj_fused_feat = self.fuse_obj(env_feat, obj_feat, obj_mask)
         

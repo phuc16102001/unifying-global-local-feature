@@ -65,7 +65,7 @@ class FeedForward(nn.Module):
 class EncoderLayer(nn.Module):
     def __init__(self, d_model, heads, d_ff=2048, dropout=0.1):
         super().__init__()
-        self.attn = nn.MultiheadAttention(d_model, heads, dropout=dropout)
+        self.attn = nn.MultiheadAttention(d_model, heads, batch_first=True, dropout=dropout)
         
         self.norm_1 = Norm(d_model)
         self.norm_2 = Norm(d_model)
@@ -78,12 +78,9 @@ class EncoderLayer(nn.Module):
         self.dropout_3 = nn.Dropout(dropout)
         
     def forward(self, x, mask=None, key_padding_mask=None):
-        x_attn = self.attn(x, x, x)[0]
-        print('linear A',x)
-        print('linear B',x_attn)
+        x_attn = self.attn(x, x, x, mask=mask, key_padding_mask=key_padding_mask)[0]
         if (key_padding_mask is not None):
             x_attn = x_attn.masked_fill(key_padding_mask.unsqueeze(-1), 0)
-        print(key_padding_mask)
         x = x + self.dropout_1(x_attn)
         x = self.norm_1(x)
 
