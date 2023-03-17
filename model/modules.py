@@ -160,7 +160,6 @@ class ObjectFusion(nn.Module):
             # Create mask for hard-attn
             # Output: batch x max_obj
             hard_attn_mask = l2_norm_softmax >= adaptive_thresh
-            print(hard_attn_mask.size())
 
             # Choose batch to keep, just keep the batch has more than 1 object
             # Output: batch
@@ -180,7 +179,6 @@ class ObjectFusion(nn.Module):
                 # Pass to encoder
                 # Output: batch x max_obj x hidden_dim
                 fuser_output = self._obj_fuser(fuser_input, key_padding_mask=~hard_attn_mask)
-                print("Fusing out", begin, fuser_output)
 
                 # Normalize result over objects
                 fuser_output = torch.sum(fuser_output, dim=1) / torch.sum(hard_attn_mask, dim=-1, keepdim=True)
