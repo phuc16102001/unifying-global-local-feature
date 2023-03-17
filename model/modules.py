@@ -82,7 +82,11 @@ class ASFormerPrediction(nn.Module):
 class VanillaEncoderPrediction(nn.Module):
     def __init__(self, hidden_dim, num_classes, num_encoders=3, heads=8, dropout=0.1):
         super().__init__()
-        self._encoder = Encoder(hidden_dim, num_encoders, heads, dropout)
+        self._encoder = Encoder(
+            hidden_dim, 
+            num_encoders, 
+            heads, 
+            dropout=dropout)
         self._out = nn.Linear(hidden_dim, num_classes)
         self._dropout = nn.Dropout()
         
@@ -111,7 +115,11 @@ class ObjectFusion(nn.Module):
 
         self._env_linear = nn.Linear(env_dim, hidden_dim)
         self._obj_linear = nn.Linear(obj_dim, hidden_dim)
-        self._obj_fuser = Encoder(hidden_dim, num_encoders, heads, dropout)
+        self._obj_fuser = Encoder(
+            hidden_dim, 
+            num_encoders, 
+            heads, 
+            dropout=dropout)
 
     def fuse_obj(self, env_feat, obj_feat, obj_mask):
         assert(env_feat.size()[-1] == obj_feat.size()[-1]), \

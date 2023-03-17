@@ -98,7 +98,7 @@ class EncoderLayer(nn.Module):
         return x
 
 class Encoder(nn.Module):
-    def __init__(self, d_model, n, heads, use_pe=True, dropout=0.1):
+    def __init__(self, d_model, n, heads, dropout=0.1, use_pe=True):
         super().__init__()
         
         self._n = n
