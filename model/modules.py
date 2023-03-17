@@ -120,6 +120,11 @@ class ObjectFusion(nn.Module):
             num_encoders, 
             heads, 
             dropout=dropout)
+        self._env_obj_fuser = Encoder(
+            hidden_dim,
+            num_encoders,
+            heads,
+            dropout=dropout)
 
     def fuse_obj(self, env_feat, obj_feat, obj_mask):
         assert(env_feat.size()[-1] == obj_feat.size()[-1]), \
@@ -154,9 +159,7 @@ class ObjectFusion(nn.Module):
             # Output: batch x max_obj
             hard_attn_mask = l2_norm_softmax >= adaptive_thresh
 
-            # TODO: double check why keep dim in batch, not object?
-
-            # Choose batch to keep
+            # Choose batch to keep, just keep the batch has more than 1 object
             # Output: batch
             keep_mask = (torch.sum(hard_attn_mask, dim=-1) > 0)
             keep_idx = torch.masked_select(
@@ -177,7 +180,7 @@ class ObjectFusion(nn.Module):
                 fuser_output = self._obj_fuser(fuser_input, key_padding_mask=hard_attn_mask)
 
                 # Normalize result over objects
-                fuser_output = torch.sum(fuser_output, dim=1) / torch.sum(hard_attn_mask, dim=-1, keepDim=True)
+                fuser_output = torch.sum(fuser_output, dim=1) / torch.sum(hard_attn_mask, dim=-1, keepdim=True)
 
                 padded_output = torch.zeros(batch_size, hidden_dim).cuda()
                 padded_output[keep_idx] = fuser_output
@@ -189,9 +192,29 @@ class ObjectFusion(nn.Module):
     # env feature size: batch x frames x env_dim
     # obj feature size: batch x frames x max_obj x obj_dim
     # obj mask size: batch x frames x max_obj
+    # project feature size: batch x frames x hidden_dim
     def forward(self, env_feat, obj_feat, obj_mask):
         env_feat = self._env_linear(env_feat)
         obj_feat = self._obj_linear(obj_feat)
+
+        # Fuse object
+        # Output: batch x frames x hidden_dim
         obj_fused_feat = self.fuse_obj(env_feat, obj_feat, obj_mask)
         
+        # Fuse environment end fused object feature
         stacked_feat = torch.stack([env_feat, obj_fused_feat], dim=2)
+        batch_size, frames, hidden_dim = env_feat.size()        # Not stacked feature
+        project_feat = torch.zeros(batch_size, frames, hidden_dim).cuda()
+
+        for begin in range(0, frames):
+            end = begin+1
+
+            fuser_input = stacked_feat[:, begin:end].contiguous()       # batch x (hidden*2)
+            fuser_input = fuser_input.view(-1, 2, hidden_dim)           # batch x 2 x hidden
+
+            fuser_output = self._env_obj_fuser(fuser_input)             # batch x 2 x hidden
+            fuser_output = torch.mean(fuser_output, dim=1)              # batch x hidden
+
+            project_feat[:, begin:end] = fuser_output.view(batch_size, -1, hidden_dim)
+
+        return project_feat
