@@ -137,7 +137,6 @@ class ObjectFusion(nn.Module):
         obj_fused_feat = torch.zeros(batch_size, frames, hidden_dim).cuda()
         if (max_obj == 0):
             return obj_fused_feat
-        print("Object before fuse", obj_fused_feat)
         
         # Step each frame
         for begin in range(0, frames):
@@ -171,14 +170,15 @@ class ObjectFusion(nn.Module):
             # Get object feature
             # Output: max_obj x batch x hidden_dim
             fuser_input = obj_feat[:, begin:end].contiguous().view(-1, max_obj, hidden_dim)
-            print("Fusing",begin,fuser_input)
             if (len(keep_idx)>0):
                 fuser_input = fuser_input[keep_idx]         # batch x max_obj x hidden_dim
                 hard_attn_mask = hard_attn_mask[keep_idx]   # batch x max_obj
 
                 # Pass to encoder
                 # Output: batch x max_obj x hidden_dim
+                print("Fusing in", begin, fuser_input)
                 fuser_output = self._obj_fuser(fuser_input, key_padding_mask=hard_attn_mask)
+                print("Fusing out", begin, fuser_output)
 
                 # Normalize result over objects
                 fuser_output = torch.sum(fuser_output, dim=1) / torch.sum(hard_attn_mask, dim=-1, keepdim=True)
