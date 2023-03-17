@@ -1,4 +1,4 @@
-export CUDA_VISIBLE_DEVICES=1,2
+export CUDA_VISIBLE_DEVICES=1
 python3 train_e2e.py "test_glip" \
 	"/ext_drive/data/soccernet_720p_2fps" \
 	-s "results/800MF_GRU_GSM_Integer" \
@@ -9,7 +9,7 @@ python3 train_e2e.py "test_glip" \
 	--start_val_epoch 149 \
 	--temporal_arch "gru" \
 	--warm_up_epochs 3 \
-	--batch_size 2 \
+	--batch_size 1 \
 	--clip_len 100 \
 	--crop_dim -1 \
 	--label_type "integer" \
