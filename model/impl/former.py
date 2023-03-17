@@ -117,5 +117,6 @@ class Encoder(nn.Module):
         for i in range(self._n):
             x = self.encoder_layers[i](
                 x, mask=mask, key_padding_mask=key_padding_mask)
+        print(x)
         x = self.norm(x)
         return x
