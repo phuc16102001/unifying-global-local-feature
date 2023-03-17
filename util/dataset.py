@@ -3,7 +3,7 @@ import os
 from util.io import load_text
 
 
-DATASETS = ['soccernet']
+DATASETS = ['soccernet', 'test_glip']
 
 
 def load_classes(file_name):

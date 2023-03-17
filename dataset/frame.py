@@ -401,7 +401,7 @@ class ActionSpotDataset(Dataset):
         max_object = self._max_object
 
         file_name = os.path.join(glip_dir, video_name+'.pt')
-        df = torch.load(file_name)
+        df = torch.load(file_name, map_location='cpu')
         
         frame_num_list = torch.Tensor(frame_num_list)
         frame_num = df[:, 0]
