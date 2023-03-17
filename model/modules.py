@@ -119,11 +119,13 @@ class ObjectFusion(nn.Module):
             hidden_dim, 
             num_encoders, 
             heads, 
+            use_pe=False,
             dropout=dropout)
         self._env_obj_fuser = Encoder(
             hidden_dim,
             num_encoders,
             heads,
+            use_pe=False,
             dropout=dropout)
 
     def fuse_obj(self, env_feat, obj_feat, obj_mask):
@@ -176,7 +178,6 @@ class ObjectFusion(nn.Module):
 
                 # Pass to encoder
                 # Output: batch x max_obj x hidden_dim
-                print("Fusing in", begin, fuser_input)
                 fuser_output = self._obj_fuser(fuser_input, key_padding_mask=hard_attn_mask)
                 print("Fusing out", begin, fuser_output)
 
