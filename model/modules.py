@@ -212,6 +212,7 @@ class ObjectFusion(nn.Module):
 
             fuser_input = stacked_feat[:, begin:end].contiguous()       # batch x (hidden*2)
             fuser_input = fuser_input.view(-1, 2, hidden_dim)           # batch x 2 x hidden
+            print("Input", fuser_input)
 
             fuser_output = self._env_obj_fuser(fuser_input)             # batch x 2 x hidden
             fuser_output = torch.mean(fuser_output, dim=1)              # batch x hidden

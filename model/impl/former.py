@@ -79,26 +79,18 @@ class EncoderLayer(nn.Module):
         
     def forward(self, x, mask=None, key_padding_mask=None):
         x_attn = self.attn(x, x, x)[0]
-        print('linear -5',x)
-        print('linear -4',x_attn)
+        print('linear A',x)
+        print('linear B',x_attn)
         if (key_padding_mask is not None):
             x_attn = x_attn.masked_fill(key_padding_mask.unsqueeze(-1), 0)
         print(key_padding_mask)
-        print('linear -3',x)
         x = x + self.dropout_1(x_attn)
-        print('linear -2',x)
         x = self.norm_1(x)
-        print('linear -1',x)
 
-        print('linear 0',x)
         x_linear = self.ff_1(x)
-        print('linear 1',x_linear)
         x_linear = F.relu(x_linear)
-        print('linear 2',x_linear)
         x_linear = self.dropout_2(x_linear)
-        print('linear 3',x_linear)
         x_linear = self.ff_2(x_linear)
-        print('linear 4',x_linear)
 
         x = x + self.dropout_3(x_linear)
         x = self.norm_2(x)
