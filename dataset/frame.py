@@ -465,11 +465,11 @@ class ActionSpotDataset(Dataset):
 
         if (self.label_type=='one_hot'):
             label_shape = (self._clip_len, len(self._class_dict) + 1)
-            labels = np.zeros(label_shape, np.int64)
+            labels = np.zeros(label_shape, np.float16)
             labels[:, 0] = 1.
         else:
             label_shape = self._clip_len
-            labels = np.zeros(label_shape, np.int64)
+            labels = np.zeros(label_shape, np.float16)
 
         for event in video_meta['events']:
             event_frame = event['frame']
