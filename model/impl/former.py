@@ -82,8 +82,11 @@ class EncoderLayer(nn.Module):
                            attn_mask=mask, key_padding_mask=key_padding_mask)[0]
         if (key_padding_mask is not None):
             x_attn = x_attn.masked_fill(key_padding_mask.unsqueeze(-1), 0)
+        print('linear -3',x)
         x = x + self.dropout_1(x_attn)
+        print('linear -2',x)
         x = self.norm_1(x)
+        print('linear -1',x)
 
         print('linear 0',x)
         x_linear = self.ff_1(x)
