@@ -137,6 +137,7 @@ class ObjectFusion(nn.Module):
         obj_fused_feat = torch.zeros(batch_size, frames, hidden_dim).cuda()
         if (max_obj == 0):
             return obj_fused_feat
+        print(obj_fused_feat)
         
         # Step each frame
         for begin in range(0, frames):
@@ -170,7 +171,7 @@ class ObjectFusion(nn.Module):
             # Get object feature
             # Output: max_obj x batch x hidden_dim
             fuser_input = obj_feat[:, begin:end].contiguous().view(-1, max_obj, hidden_dim)
-
+            print(fuser_input)
             if (len(keep_idx)>0):
                 fuser_input = fuser_input[keep_idx]         # batch x max_obj x hidden_dim
                 hard_attn_mask = hard_attn_mask[keep_idx]   # batch x max_obj
@@ -196,8 +197,6 @@ class ObjectFusion(nn.Module):
     def forward(self, env_feat, obj_feat, obj_mask):
         env_feat = self._env_linear(env_feat)
         obj_feat = self._obj_linear(obj_feat)
-        print(env_feat)
-        print(obj_feat)
 
         # Fuse object
         # Output: batch x frames x hidden_dim
