@@ -178,7 +178,7 @@ class ObjectFusion(nn.Module):
 
                 # Pass to encoder
                 # Output: batch x max_obj x hidden_dim
-                fuser_output = self._obj_fuser(fuser_input, key_padding_mask=hard_attn_mask)
+                fuser_output = self._obj_fuser(fuser_input, key_padding_mask=~hard_attn_mask)
                 print("Fusing out", begin, fuser_output)
 
                 # Normalize result over objects
