@@ -202,7 +202,6 @@ class ObjectFusion(nn.Module):
         # Fuse object
         # Output: batch x frames x hidden_dim
         obj_fused_feat = self.fuse_obj(env_feat, obj_feat, obj_mask)
-        print(obj_fused_feat)
         
         # Fuse environment end fused object feature
         stacked_feat = torch.stack([env_feat, obj_fused_feat], dim=2)
@@ -220,5 +219,4 @@ class ObjectFusion(nn.Module):
 
             project_feat[:, begin:end] = fuser_output.view(batch_size, -1, hidden_dim)
 
-        print(project_feat)
         return project_feat
