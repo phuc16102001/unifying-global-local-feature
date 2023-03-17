@@ -242,8 +242,6 @@ class E2EModel(BaseRGBModel):
                 projected_feat = self._fuse(env_feat, glip_feat, glip_mask)
 
             output = self._pred_fine(projected_feat)
-            print(output)
-
             return output
 
         def print_stats(self):
@@ -303,6 +301,7 @@ class E2EModel(BaseRGBModel):
                 with torch.cuda.amp.autocast():
                     pred = self._model(frame, glip_feat, glip_mask)
 
+                    print(pred)
                     loss = 0.
                     if len(pred.shape) == 3:
                         pred = pred.unsqueeze(0)
