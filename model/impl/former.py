@@ -86,11 +86,13 @@ class EncoderLayer(nn.Module):
         x = self.norm_1(x)
 
         x_linear = self.ff_1(x)
+        print('linear 1',x_linear)
         x_linear = F.relu(x_linear)
+        print('linear 2',x_linear)
         x_linear = self.dropout_2(x_linear)
+        print('linear 3',x_linear)
         x_linear = self.ff_2(x_linear)
-        print('x',x)
-        print('linear',x_linear)
+        print('linear 4',x_linear)
 
         x = x + self.dropout_3(x_linear)
         x = self.norm_2(x)
