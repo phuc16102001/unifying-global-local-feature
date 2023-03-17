@@ -238,9 +238,8 @@ class E2EModel(BaseRGBModel):
                 env_feat = env_feat[:, :true_clip_len, :]
 
             projected_feat = env_feat
-            if (glip_feat):
-                obj_feat = self._fuse(env_feat, glip_feat, glip_mask)
-
+            if (self._glip_feature):
+                projected_feat = self._fuse(env_feat, glip_feat, glip_mask)
 
             return self._pred_fine(projected_feat)
 
