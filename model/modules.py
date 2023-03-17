@@ -179,6 +179,7 @@ class ObjectFusion(nn.Module):
                 # Pass to encoder
                 # Output: batch x max_obj x hidden_dim
                 fuser_output = self._obj_fuser(fuser_input, key_padding_mask=~hard_attn_mask)
+                print(fuser_output)
 
                 # Normalize result over objects
                 fuser_output = torch.sum(fuser_output, dim=1) / torch.sum(hard_attn_mask, dim=-1, keepdim=True)

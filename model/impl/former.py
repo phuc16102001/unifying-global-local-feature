@@ -90,9 +90,6 @@ class EncoderLayer(nn.Module):
         x_linear = self.dropout_2(x_linear)
         x_linear = self.ff_2(x_linear)
         
-        if (key_padding_mask is not None):
-            print(x, x_linear)
-
         x = x + self.dropout_3(x_linear)
         x = self.norm_2(x)
         if (key_padding_mask is not None):
