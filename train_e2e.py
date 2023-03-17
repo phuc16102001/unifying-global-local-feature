@@ -563,6 +563,9 @@ def get_lr_scheduler(args, optimizer, num_steps_per_epoch):
 
 
 def main(args):
+    print("*Arguments*")
+    print(args)
+
     if args.num_workers is not None:
         global BASE_NUM_WORKERS
         BASE_NUM_WORKERS = args.num_workers
