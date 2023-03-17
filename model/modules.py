@@ -160,6 +160,7 @@ class ObjectFusion(nn.Module):
             # Create mask for hard-attn
             # Output: batch x max_obj
             hard_attn_mask = l2_norm_softmax >= adaptive_thresh
+            print(hard_attn_mask.size())
 
             # Choose batch to keep, just keep the batch has more than 1 object
             # Output: batch
