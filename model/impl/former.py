@@ -80,10 +80,10 @@ class EncoderLayer(nn.Module):
     def forward(self, x, mask=None, key_padding_mask=None):
         x_attn = self.attn(x, x, x, 
                            attn_mask=mask, key_padding_mask=key_padding_mask)[0]
+        print('linear -4',x_attn)
         if (key_padding_mask is not None):
             x_attn = x_attn.masked_fill(key_padding_mask.unsqueeze(-1), 0)
         print(key_padding_mask)
-        print('linear -4',x_attn)
         print('linear -3',x)
         x = x + self.dropout_1(x_attn)
         print('linear -2',x)
