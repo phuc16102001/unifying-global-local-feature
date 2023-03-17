@@ -1,5 +1,5 @@
 export CUDA_VISIBLE_DEVICES=1,2
-python3 train_e2e.py "soccernet" \
+python3 train_e2e.py "test_glip" \
 	"/ext_drive/data/soccernet_720p_2fps" \
 	-s "results/800MF_GRU_GSM_Focal" \
 	-m "rny008_gsm" \
@@ -12,7 +12,7 @@ python3 train_e2e.py "soccernet" \
 	--batch_size 2 \
 	--clip_len 100 \
 	--crop_dim -1 \
-	--label_type "one_hot" \
+	--label_type "integer" \
 	--num_workers 4 \
 	--mixup \
 	--glip_dir "/ext_drive/data/glip_feat" 
