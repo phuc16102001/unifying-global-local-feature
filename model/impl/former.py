@@ -89,7 +89,8 @@ class EncoderLayer(nn.Module):
         x_linear = F.relu(x_linear)
         x_linear = self.dropout_2(x_linear)
         x_linear = self.ff_2(x_linear)
-        
+        print(x)
+
         x = x + self.dropout_3(x_linear)
         x = self.norm_2(x)
         if (key_padding_mask is not None):
@@ -117,6 +118,5 @@ class Encoder(nn.Module):
         for i in range(self._n):
             x = self.encoder_layers[i](
                 x, mask=mask, key_padding_mask=key_padding_mask)
-        print(x)
         x = self.norm(x)
         return x
