@@ -78,8 +78,7 @@ class EncoderLayer(nn.Module):
         self.dropout_3 = nn.Dropout(dropout)
         
     def forward(self, x, mask=None, key_padding_mask=None):
-        x_attn = self.attn(x, x, x, 
-                           attn_mask=mask)[0]
+        x_attn = self.attn(x, x, x)[0]
         print('linear -5',x)
         print('linear -4',x_attn)
         if (key_padding_mask is not None):
