@@ -1,7 +1,7 @@
 export CUDA_VISIBLE_DEVICES=1,2
 python3 train_e2e.py "test_glip" \
 	"/ext_drive/data/soccernet_720p_2fps" \
-	-s "results/800MF_GRU_GSM_Focal" \
+	-s "results/800MF_GRU_GSM_Integer" \
 	-m "rny008_gsm" \
 	-mgpu \
 	--learning_rate 1e-4 \

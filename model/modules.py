@@ -196,13 +196,10 @@ class ObjectFusion(nn.Module):
     def forward(self, env_feat, obj_feat, obj_mask):
         env_feat = self._env_linear(env_feat)
         obj_feat = self._obj_linear(obj_feat)
-        print(env_feat.dtype)
-        print(obj_feat.dtype)
 
         # Fuse object
         # Output: batch x frames x hidden_dim
         obj_fused_feat = self.fuse_obj(env_feat, obj_feat, obj_mask)
-        print(obj_fused_feat.dtype)
         
         # Fuse environment end fused object feature
         stacked_feat = torch.stack([env_feat, obj_fused_feat], dim=2)
@@ -219,6 +216,5 @@ class ObjectFusion(nn.Module):
             fuser_output = torch.mean(fuser_output, dim=1)              # batch x hidden
 
             project_feat[:, begin:end] = fuser_output.view(batch_size, -1, hidden_dim)
-        print(project_feat.dtype)
 
         return project_feat

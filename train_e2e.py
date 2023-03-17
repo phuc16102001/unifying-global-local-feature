@@ -28,7 +28,7 @@ from util.dataset import DATASETS, load_classes
 from util.score import compute_mAPs
 from util.losses import sigmoid_focal_loss
 
-EPOCH_NUM_FRAMES = 500_000
+EPOCH_NUM_FRAMES = 5_000
 BASE_NUM_WORKERS = 4
 BASE_NUM_VAL_EPOCHS = 20
 INFERENCE_BATCH_SIZE = 12
@@ -241,7 +241,10 @@ class E2EModel(BaseRGBModel):
             if (self._glip_feature):
                 projected_feat = self._fuse(env_feat, glip_feat, glip_mask)
 
-            return self._pred_fine(projected_feat)
+            output = self._pred_fine(projected_feat)
+            print(output)
+
+            return output
 
         def print_stats(self):
             print('Model params:',
