@@ -28,7 +28,7 @@ from util.dataset import DATASETS, load_classes
 from util.score import compute_mAPs
 from util.losses import sigmoid_focal_loss
 
-EPOCH_NUM_FRAMES = 500_000
+EPOCH_NUM_FRAMES = 5_000
 BASE_NUM_WORKERS = 4
 BASE_NUM_VAL_EPOCHS = 20
 INFERENCE_BATCH_SIZE = 12
@@ -37,10 +37,15 @@ INFERENCE_BATCH_SIZE = 12
 MAX_GRU_HIDDEN_DIM = 768
 MAX_FORMER_HIDDEN_DIM = 768
 
+# GLIP
+GLIP_DIM = 256
+MAX_OBJ = 35
+
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('dataset', type=str, choices=DATASETS)
     parser.add_argument('frame_dir', type=str, help='Path to extracted frames')
+    parser.add_argument('--glip_dir', type=str, default=None, help="Path to extracted GLIP features", required=False)
 
     parser.add_argument('--modality', type=str, choices=['rgb', 'bw', 'flow'],
                         default='rgb')
@@ -69,7 +74,7 @@ def get_args():
         ], help='CNN architecture for feature extraction')
     parser.add_argument(
         '-t', '--temporal_arch', type=str, default='gru',
-        choices=['', 'gru', 'deeper_gru', 'mstcn', 'asformer', 'former'],
+        choices=['', 'gru', 'deeper_gru', 'mstcn', 'asformer', 'former', 'former_nope'],
         help='Spotting architecture, after spatial pooling')
 
     parser.add_argument('--clip_len', type=int, default=100)
@@ -111,9 +116,10 @@ class E2EModel(BaseRGBModel):
     class Impl(nn.Module):
 
         def __init__(self, num_classes, feature_arch, temporal_arch, clip_len,
-                     modality, label_type):
+                    glip_feature, modality, label_type):
             super().__init__()
             self._label_type = label_type
+            self._glip_feature = glip_feature
             is_rgb = modality == 'rgb'
             in_channels = {'flow': 2, 'bw': 1, 'rgb': 3}[modality]
 
@@ -169,6 +175,7 @@ class E2EModel(BaseRGBModel):
 
             self._features = features
             self._feat_dim = feat_dim
+            print("Environment feature dim:", feat_dim)
 
             if 'gru' in temporal_arch:
                 hidden_dim = feat_dim
@@ -188,13 +195,36 @@ class E2EModel(BaseRGBModel):
                 self._pred_fine = ASFormerPrediction(feat_dim, num_classes, 3)
             elif temporal_arch == 'former':
                 hidden_dim = feat_dim
-                self._pred_fine = VanillaEncoderPrediction(hidden_dim, num_classes, 1)
+                self._pred_fine = VanillaEncoderPrediction(
+                    hidden_dim, 
+                    num_classes, 
+                    num_encoders=1, 
+                    use_pe=True)
+            elif temporal_arch == 'former_nope':
+                hidden_dim = feat_dim
+                self._pred_fine = VanillaEncoderPrediction(
+                    hidden_dim, 
+                    num_classes, 
+                    num_encoders=1, 
+                    use_pe=False)
             elif temporal_arch == '':
                 self._pred_fine = FCPrediction(feat_dim, num_classes)
             else:
                 raise NotImplementedError(temporal_arch)
+            
+            # Object fusion for GLIP
+            if (self._glip_feature):
+                self._fuse = ObjectFusion(
+                    feat_dim, GLIP_DIM, 
+                    hidden_dim=feat_dim, 
+                    num_encoders=1, heads=8,
+                    max_obj=MAX_OBJ)
 
-        def forward(self, x):
+        # Forward the input batch
+        # x feature size: batch x frames x channel x height x width
+        # glip feature size: batch x frames x max_object x feat_dim
+        # glip mask size: batch x frames x max_object
+        def forward(self, x, glip_feat=None, glip_mask=None):
             batch_size, true_clip_len, channels, height, width = x.shape
 
             clip_len = true_clip_len
@@ -208,15 +238,22 @@ class E2EModel(BaseRGBModel):
                         x, (0,) * 7 + (self._require_clip_len - true_clip_len,))
                     clip_len = self._require_clip_len
 
-            im_feat = self._features(
+            # Environment feature
+            # Feature size: batch x frames x feat_dim
+            env_feat = self._features(
                 x.view(-1, channels, height, width)
             ).reshape(batch_size, clip_len, self._feat_dim)
 
             # Undo padding
             if true_clip_len != clip_len:
-                im_feat = im_feat[:, :true_clip_len, :]
+                env_feat = env_feat[:, :true_clip_len, :]
 
-            return self._pred_fine(im_feat)
+            projected_feat = env_feat
+            if (self._glip_feature):
+                projected_feat = self._fuse(env_feat, glip_feat, glip_mask)
+
+            output = self._pred_fine(projected_feat)
+            return output
 
         def print_stats(self):
             print('Model params:',
@@ -227,11 +264,12 @@ class E2EModel(BaseRGBModel):
                 sum(p.numel() for p in self._pred_fine.parameters()))
 
     def __init__(self, num_classes, feature_arch, temporal_arch, clip_len,
-                 modality, device='cuda', multi_gpu=False, label_type='one_hot'):
+                 glip_feature, modality, device='cuda', multi_gpu=False, label_type='one_hot'):
         self.device = device
         self._multi_gpu = multi_gpu
+        self._glip_feature = glip_feature
         self._model = E2EModel.Impl(
-            num_classes, feature_arch, temporal_arch, clip_len, modality, label_type)
+            num_classes, feature_arch, temporal_arch, clip_len, glip_feature, modality, label_type)
         self._model.print_stats()
 
         if multi_gpu:
@@ -260,12 +298,19 @@ class E2EModel(BaseRGBModel):
                 frame = loader.dataset.load_frame_gpu(batch, self.device)
                 label = batch['label'].to(self.device)
 
+                if (self._glip_feature):
+                    glip_feat = batch['glip_feature']   # Batch x Frames x Max_objects x Feat_dim
+                    glip_mask = batch['glip_mask']      # Batch x Frames x Max_objects
+                else:
+                    glip_feat = None
+                    glip_mask = None
+
                 # Depends on whether mixup/one-hot is used
                 label = label.flatten() if len(label.shape) == 2 \
                     else label.view(-1, label.shape[-1])
 
                 with torch.cuda.amp.autocast():
-                    pred = self._model(frame)
+                    pred = self._model(frame, glip_feat, glip_mask)
 
                     loss = 0.
                     if len(pred.shape) == 3:
@@ -428,7 +473,9 @@ def get_datasets(args):
 
     dataset_len = EPOCH_NUM_FRAMES // args.clip_len
     dataset_kwargs = {
-        'crop_dim': args.crop_dim, 'dilate_len': args.dilate_len,
+        'crop_dim': args.crop_dim, 
+        'dilate_len': args.dilate_len,
+        'glip_dir': args.glip_dir,
         'mixup': args.mixup
     }
 
@@ -501,6 +548,7 @@ def store_config(file_path, args, num_epochs, classes):
         'epoch_num_frames': EPOCH_NUM_FRAMES,
         'dilate_len': args.dilate_len,
         'mixup': args.mixup,
+        'glip_feature': (args.glip_dir is not None),
         'fg_upsample': args.fg_upsample,
         'label_type': args.label_type
     }
@@ -526,6 +574,9 @@ def get_lr_scheduler(args, optimizer, num_steps_per_epoch):
 
 
 def main(args):
+    print("*Arguments*")
+    print(args)
+
     if args.num_workers is not None:
         global BASE_NUM_WORKERS
         BASE_NUM_WORKERS = args.num_workers
@@ -552,6 +603,7 @@ def main(args):
 
     model = E2EModel(
         len(classes) + 1, args.feature_arch, args.temporal_arch,
+        glip_feature = (args.glip_dir is not None),
         clip_len=args.clip_len, modality=args.modality,
         multi_gpu=args.gpu_parallel, label_type=args.label_type)
     optimizer, scaler = model.get_optimizer({'lr': args.learning_rate})
