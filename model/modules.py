@@ -80,13 +80,14 @@ class ASFormerPrediction(nn.Module):
 
 
 class VanillaEncoderPrediction(nn.Module):
-    def __init__(self, hidden_dim, num_classes, num_encoders=3, heads=8, dropout=0.1):
+    def __init__(self, hidden_dim, num_classes, num_encoders=3, heads=8, dropout=0.1, use_pe=True):
         super().__init__()
         self._encoder = Encoder(
             hidden_dim, 
             num_encoders, 
             heads, 
-            dropout=dropout)
+            dropout=dropout,
+            use_pe=use_pe)
         self._out = nn.Linear(hidden_dim, num_classes)
         self._dropout = nn.Dropout()
         

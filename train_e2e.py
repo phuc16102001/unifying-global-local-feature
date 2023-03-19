@@ -74,7 +74,7 @@ def get_args():
         ], help='CNN architecture for feature extraction')
     parser.add_argument(
         '-t', '--temporal_arch', type=str, default='gru',
-        choices=['', 'gru', 'deeper_gru', 'mstcn', 'asformer', 'former'],
+        choices=['', 'gru', 'deeper_gru', 'mstcn', 'asformer', 'former', 'former_nope'],
         help='Spotting architecture, after spatial pooling')
 
     parser.add_argument('--clip_len', type=int, default=100)
@@ -195,7 +195,18 @@ class E2EModel(BaseRGBModel):
                 self._pred_fine = ASFormerPrediction(feat_dim, num_classes, 3)
             elif temporal_arch == 'former':
                 hidden_dim = feat_dim
-                self._pred_fine = VanillaEncoderPrediction(hidden_dim, num_classes, 1)
+                self._pred_fine = VanillaEncoderPrediction(
+                    hidden_dim, 
+                    num_classes, 
+                    num_encoders=1, 
+                    use_pe=True)
+            elif temporal_arch == 'former_nope':
+                hidden_dim = feat_dim
+                self._pred_fine = VanillaEncoderPrediction(
+                    hidden_dim, 
+                    num_classes, 
+                    num_encoders=1, 
+                    use_pe=False)
             elif temporal_arch == '':
                 self._pred_fine = FCPrediction(feat_dim, num_classes)
             else:
