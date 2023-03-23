@@ -340,7 +340,7 @@ class E2EModel(BaseRGBModel):
 
         return epoch_loss / len(loader)     # Avg loss
 
-    def predict(self, seq, use_amp=True):
+    def predict(self, seq, glip_feat=None, glip_mask=None, use_amp=True):
         if not isinstance(seq, torch.Tensor):
             seq = torch.FloatTensor(seq)
         if len(seq.shape) == 4: # (L, C, H, W)
@@ -351,7 +351,7 @@ class E2EModel(BaseRGBModel):
         self._model.eval()
         with torch.no_grad():
             with torch.cuda.amp.autocast() if use_amp else nullcontext():
-                pred = self._model(seq)
+                pred = self._model(seq, glip_feat, glip_mask)
             if isinstance(pred, tuple):
                 pred = pred[0]
             if len(pred.shape) > 3:

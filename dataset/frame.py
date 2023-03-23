@@ -606,7 +606,7 @@ class ActionSpotVideoDataset(Dataset):
 
     def __getitem__(self, idx):
         video_name, start = self._clips[idx]
-        frames = self._frame_reader.load_frames(
+        frames, frame_num_list = self._frame_reader.load_frames(
             video_name, start, start + self._clip_len * self._stride, pad=True,
             stride=self._stride)
 

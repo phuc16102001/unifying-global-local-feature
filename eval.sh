@@ -1,5 +1,5 @@
-python eval_soccernetv2.py "D:\data\SoccerNet-Pred\Integer\pred-test.17.recall.json" \
+python eval_soccernetv2.py "D:\Thesis\data\prediction\pred-test.131.recall.json" \
 	--split "test" \
-	--eval_dir "D:\data\SoccerNet-Pred\output" \
-	--soccernet_path "D:\data\SoccerNet" \
+	--eval_dir "D:\Thesis\data\prediction\output" \
+	--soccernet_path "D:\Thesis\data\soccernet_label" \
 	--nms_window 2
