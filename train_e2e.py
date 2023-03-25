@@ -279,6 +279,9 @@ class E2EModel(BaseRGBModel):
         self._num_classes = num_classes
         self._label_type = label_type
 
+    def is_glip(self):
+        return self._glip_feature
+
     def epoch(self, loader, optimizer=None, scaler=None, lr_scheduler=None,
               acc_grad_iter=1, fg_weight=5):
         if optimizer is None:
@@ -382,8 +385,12 @@ def evaluate(model, dataset, split, classes, save_pred, calc_stats=True,
     )):
         if batch_size > 1:
             # Batched by dataloader
-            _, batch_pred_scores = model.predict(clip['frame'])
-
+            if model.is_glip():
+                _, batch_pred_scores = model.predict(clip['frame'], clip['glip_feature'], clip['glip_mask'])
+            else:
+                _, batch_pred_scores = model.predict(clip['frame'])
+                
+            # Process each frame (shape[0] = batch size)
             for i in range(clip['frame'].shape[0]):
                 video = clip['video'][i]
                 scores, support = pred_dict[video]
@@ -403,6 +410,7 @@ def evaluate(model, dataset, split, classes, save_pred, calc_stats=True,
             # Batched by dataset
             scores, support = pred_dict[clip['video'][0]]
 
+            # Single frame (batch = 1)
             start = clip['start'][0].item()
             _, pred_scores = model.predict(clip['frame'][0])
             if start < 0:
@@ -695,6 +703,7 @@ def main(args):
                 split_data = ActionSpotVideoDataset(
                     classes, split_path, args.frame_dir, args.modality,
                     args.clip_len, overlap_len=args.clip_len // 2,
+                    glip_dir=args.glip_dir,
                     crop_dim=args.crop_dim)
                 split_data.print_info()
 

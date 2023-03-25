@@ -268,6 +268,64 @@ def _get_img_transforms(
     return crop_transform, img_transform
 
 
+def load_glip(glip_dir, video_name, frame_num_list, max_object = 35):
+    file_name = os.path.join(glip_dir, video_name+'.pt')
+    df = torch.load(file_name, map_location='cpu')
+    
+    frame_num_list = torch.Tensor(frame_num_list)
+    frame_num = df[:, 0]
+    mask = (((frame_num.view(-1, 1) - frame_num_list.view(-1)) == 0).sum(dim=-1))!=0
+    keep = df[mask]
+
+    feat_dict = {}
+    for row in keep:
+        frame_idx = int(row[0].item())
+        class_id = int(row[1].item())
+        boxes = row[2:6]
+        feat = row[6:]
+
+        if (frame_idx not in feat_dict):
+            feat_dict[frame_idx] = []
+
+        feat_dict[frame_idx].append({
+            'frame': frame_idx,
+            'class': class_id,
+            'boxes': boxes,
+            'feature': feat
+        })   
+
+    # Output for feature
+    # Feature size: Frames x Max_objects x Feat_size
+    # Frames: Number of frame fetched
+    # Max_objects: The number of  objects (after padding)
+    # Feat_size: The dimension of features
+    # ----------------------------------------------------
+    # Output for padding mask
+    # Feature size: Frames x Max_objects
+    # Frames: Number of frames fetched
+    # Max_objects: Bit mask to keep or not
+    ret = []
+    mask = []
+    for frame_num in frame_num_list:
+        frame_feat = []
+        num = int(frame_num.item())
+        for obj in feat_dict[num]:
+            frame_feat.append(obj['feature'])
+        assert len(frame_feat) <= max_object, 'GLIP objects are exceeded'
+        
+        frame_mask = torch.concat(
+            (torch.ones(len(frame_feat)), torch.zeros(max_object - len(frame_feat)))
+        )
+
+        frame_feat = torch.stack(frame_feat)
+        frame_feat = F.pad(frame_feat, (0, 0, 0, max_object - len(frame_feat)))
+        
+        ret.append(frame_feat)
+        mask.append(frame_mask)
+    ret = torch.stack(ret)/100
+    mask = torch.stack(mask)
+    return ret, mask
+
 def _print_info_helper(src_file, labels):
         num_frames = sum([x['num_frames'] for x in labels])
         num_events = sum([len(x['events']) for x in labels])
@@ -396,66 +454,6 @@ class ActionSpotDataset(Dataset):
         assert base_idx <= frame_idx
         assert base_idx + self._clip_len > frame_idx
         return video_meta, base_idx
-    
-    def load_glip(self, glip_dir, video_name, frame_num_list):
-        max_object = self._max_object
-
-        file_name = os.path.join(glip_dir, video_name+'.pt')
-        df = torch.load(file_name, map_location='cpu')
-        
-        frame_num_list = torch.Tensor(frame_num_list)
-        frame_num = df[:, 0]
-        mask = (((frame_num.view(-1, 1) - frame_num_list.view(-1)) == 0).sum(dim=-1))!=0
-        keep = df[mask]
-
-        feat_dict = {}
-        for row in keep:
-            frame_idx = int(row[0].item())
-            class_id = int(row[1].item())
-            boxes = row[2:6]
-            feat = row[6:]
-
-            if (frame_idx not in feat_dict):
-                feat_dict[frame_idx] = []
-
-            feat_dict[frame_idx].append({
-                'frame': frame_idx,
-                'class': class_id,
-                'boxes': boxes,
-                'feature': feat
-            })   
-
-        # Output for feature
-        # Feature size: Frames x Max_objects x Feat_size
-        # Frames: Number of frame fetched
-        # Max_objects: The number of  objects (after padding)
-        # Feat_size: The dimension of features
-        # ----------------------------------------------------
-        # Output for padding mask
-        # Feature size: Frames x Max_objects
-        # Frames: Number of frames fetched
-        # Max_objects: Bit mask to keep or not
-        ret = []
-        mask = []
-        for frame_num in frame_num_list:
-            frame_feat = []
-            num = int(frame_num.item())
-            for obj in feat_dict[num]:
-                frame_feat.append(obj['feature'])
-            assert len(frame_feat) <= max_object, 'GLIP objects are exceeded'
-            
-            frame_mask = torch.concat(
-                (torch.ones(len(frame_feat)), torch.zeros(max_object - len(frame_feat)))
-            )
-
-            frame_feat = torch.stack(frame_feat)
-            frame_feat = F.pad(frame_feat, (0, 0, 0, max_object - len(frame_feat)))
-            
-            ret.append(frame_feat)
-            mask.append(frame_mask)
-        ret = torch.stack(ret)/100
-        mask = torch.stack(mask)
-        return ret, mask
 
     def _get_one(self):
         if self._fg_upsample > 0 and random.random() >= self._fg_upsample:
@@ -498,7 +496,7 @@ class ActionSpotDataset(Dataset):
         glip_feat = None
         glip_mask = None
         if (self._glip_dir is not None):
-            glip_feat, glip_mask = self.load_glip(
+            glip_feat, glip_mask = load_glip(
                 self._glip_dir, video_meta['video'], frame_num_list)
 
         if (glip_feat is not None):
@@ -566,6 +564,7 @@ class ActionSpotVideoDataset(Dataset):
             stride=1,
             pad_len=DEFAULT_PAD_LEN,
             flip=False,
+            glip_dir=None,              # Path to Glip feature
             multi_crop=False,
             skip_partial_end=True
     ):
@@ -586,6 +585,7 @@ class ActionSpotVideoDataset(Dataset):
 
         self._flip = flip
         self._multi_crop = multi_crop
+        self._glip_dir = glip_dir
 
         self._clips = []
         for l in self._labels:
@@ -613,9 +613,26 @@ class ActionSpotVideoDataset(Dataset):
         if self._flip:
             frames = torch.stack((frames, frames.flip(-1)), dim=0)
 
-        return {'video': video_name, 'start': start // self._stride,
-                'frame': frames}
+        glip_feat = None
+        glip_mask = None
+        if (self._glip_dir is not None):
+            glip_feat, glip_mask = load_glip(
+                self._glip_dir, video_name, frame_num_list)
 
+        if (self._glip_dir is not None):
+            return {
+                'video': video_name, 
+                'start': start // self._stride,
+                'frame': frames,
+                'glip_feature': glip_feat,  # frame x obj x feat
+                'glip_mask': glip_mask,
+            }
+        else:
+            return {
+                'video': video_name, 
+                'start': start // self._stride,
+                'frame': frames
+            }
     def get_labels(self, video):
         meta = self._labels[self._video_idxs[video]]
         num_frames = meta['num_frames']

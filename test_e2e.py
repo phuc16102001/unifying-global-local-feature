@@ -22,6 +22,7 @@ def get_args():
     parser.add_argument('--no_overlap', action='store_true')
     parser.add_argument('--recall_thresh', type=float)
     parser.add_argument('--criterion_key', choices=['train', 'val', 'val_mAP'], default='val_mAP')
+    parser.add_argument('--glip_dir', type=str, default=None, help="Path to extracted GLIP features", required=False)
 
     save = parser.add_mutually_exclusive_group()
     save.add_argument('--save', action='store_true',
@@ -55,7 +56,7 @@ def get_last_epoch(model_dir):
     return last_epoch
 
 
-def main(model_dir, frame_dir, split, no_overlap, save, save_as, dataset, criterion_key, recall_thresh):
+def main(model_dir, frame_dir, split, no_overlap, save, save_as, glip_dir, dataset, criterion_key, recall_thresh):
     config_path = os.path.join(model_dir, 'config.json')
     with open(config_path) as fp:
         print(fp.read())
@@ -98,6 +99,7 @@ def main(model_dir, frame_dir, split, no_overlap, save, save_as, dataset, criter
     split_data = ActionSpotVideoDataset(
         classes, split_path, frame_dir, config['modality'], config['clip_len'],
         overlap_len=0 if no_overlap else config['clip_len'] // 2,
+        glip_dir=glip_dir,
         crop_dim=config['crop_dim'])
 
     pred_file = None
