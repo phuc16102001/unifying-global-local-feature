@@ -268,7 +268,7 @@ def _get_img_transforms(
     return crop_transform, img_transform
 
 
-def load_glip(glip_dir, video_name, frame_num_list, max_object = 35):
+def load_glip(glip_dir, video_name, frame_num_list, max_object = 50):
     file_name = os.path.join(glip_dir, video_name+'.pt')
     df = torch.load(file_name, map_location='cpu')
     
@@ -311,7 +311,7 @@ def load_glip(glip_dir, video_name, frame_num_list, max_object = 35):
         num = int(frame_num.item())
         for obj in feat_dict[num]:
             frame_feat.append(obj['feature'])
-        assert len(frame_feat) <= max_object, 'GLIP objects are exceeded'
+        assert len(frame_feat) <= max_object, f'GLIP objects are exceeded at {glip_dir} (frame {num})'
         
         frame_mask = torch.concat(
             (torch.ones(len(frame_feat)), torch.zeros(max_object - len(frame_feat)))

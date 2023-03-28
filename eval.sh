@@ -1,4 +1,4 @@
-python eval_soccernetv2.py "D:\Thesis\data\prediction\pred-test.130.recall.json" \
+python eval_soccernetv2.py "D:\Thesis\data\prediction\pred-test.143.recall.json" \
 	--split "test" \
 	--eval_dir "D:\Thesis\data\prediction\output" \
 	--soccernet_path "D:\Thesis\data\soccernet_label" \

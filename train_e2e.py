@@ -39,7 +39,7 @@ MAX_FORMER_HIDDEN_DIM = 768
 
 # GLIP
 GLIP_DIM = 256
-MAX_OBJ = 35
+MAX_OBJ = 50
 
 def get_args():
     parser = argparse.ArgumentParser()
