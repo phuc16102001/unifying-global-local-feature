@@ -278,6 +278,7 @@ def load_glip(glip_dir, video_name, frame_num_list, max_object = 50):
     keep = df[mask]
 
     feat_dict = {}
+    feat_size = keep[0].shape[0]
     for row in keep:
         frame_idx = int(row[0].item())
         class_id = int(row[1].item())
@@ -309,12 +310,23 @@ def load_glip(glip_dir, video_name, frame_num_list, max_object = 50):
     for frame_num in frame_num_list:
         frame_feat = []
         num = int(frame_num.item())
+
+        # Handle object exceed max objects
+        assert len(frame_feat) <= max_object, f'GLIP objects are exceeded at {glip_dir} (frame {num})'
+
+        # Handle no object in frame
         if (not(num in feat_dict)):
             continue
+
+        # Append objects
         for obj in feat_dict[num]:
             frame_feat.append(obj['feature'])
-        assert len(frame_feat) <= max_object, f'GLIP objects are exceeded at {glip_dir} (frame {num})'
-        
+
+        # Append nothing to ensure the size
+        for _ in range(max_object - len(frame_feat)):
+            frame_feat.append(torch.zeros(feat_size))
+
+        # Create mask
         frame_mask = torch.concat(
             (torch.ones(len(frame_feat)), torch.zeros(max_object - len(frame_feat)))
         )
