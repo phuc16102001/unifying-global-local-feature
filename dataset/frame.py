@@ -310,15 +310,23 @@ def load_glip(glip_dir, video_name, frame_num_list, max_object = 50):
     for frame_num in frame_num_list:
         frame_feat = []
         num = int(frame_num.item())
-        n_object = len(frame_feat)
 
-        # Handle object exceed max objects
-        assert n_object <= max_object, f'GLIP objects are exceeded at {glip_dir} (frame {num})'
+        # Have object
+        if (num in feat_dict):
 
-        # Append objects
-        for obj in feat_dict[num]:
-            frame_feat.append(obj['feature'])
+            # Get all objects
+            ls_obj = feat_dict[num]
+            n_object = len(ls_obj)
+        
+            # Handle object exceed max objects
+            assert n_object <= max_object, f'GLIP objects are exceeded at {glip_dir} (frame {num})'
 
+            # Append objects
+            for obj in ls_obj:
+                frame_feat.append(obj['feature'])
+        else:
+            n_object = 0
+            
         # Append nothing to ensure the size
         for _ in range(max_object - n_object):
             frame_feat.append(torch.zeros(feat_size))
