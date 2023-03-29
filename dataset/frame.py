@@ -279,7 +279,7 @@ def load_glip(glip_dir, video_name, frame_num_list, max_object = 50):
 
     feat_dict = {}
     feat_size = keep[0].shape[0]
-    print("Feat size:",feat_size)
+    print("Feat size:",keep[0].shape)
     for row in keep:
         frame_idx = int(row[0].item())
         class_id = int(row[1].item())
