@@ -336,14 +336,12 @@ def load_glip(glip_dir, video_name, frame_num_list, max_object = 50):
         # Append nothing to ensure the size
         for _ in range(max_object - n_object):
             frame_feat.append(torch.zeros(feat_size))
+        frame_feat = torch.stack(frame_feat)
 
         # Create mask
         frame_mask = torch.concat(
             (torch.ones(n_object), torch.zeros(max_object - n_object))
         )
-
-        frame_feat = torch.stack(frame_feat)
-        frame_feat = F.pad(frame_feat, (0, 0, 0, max_object - len(frame_feat)))
         
         ret.append(frame_feat)
         mask.append(frame_mask)
