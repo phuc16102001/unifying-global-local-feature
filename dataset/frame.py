@@ -314,10 +314,6 @@ def load_glip(glip_dir, video_name, frame_num_list, max_object = 50):
         # Handle object exceed max objects
         assert len(frame_feat) <= max_object, f'GLIP objects are exceeded at {glip_dir} (frame {num})'
 
-        # Handle no object in frame
-        if (not(num in feat_dict)):
-            continue
-
         # Append objects
         for obj in feat_dict[num]:
             frame_feat.append(obj['feature'])
