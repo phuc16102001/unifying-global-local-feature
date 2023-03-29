@@ -333,6 +333,8 @@ class E2EModel(BaseRGBModel):
                                 input, 
                                 label,
                                 **loss_kwargs)
+                        print(input)
+                        print(loss)
 
                 if optimizer is not None:
                     step(optimizer, scaler, loss / acc_grad_iter,
