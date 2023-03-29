@@ -7,7 +7,7 @@ python3 train_e2e.py "soccernet" \
 	--learning_rate 1e-3 \
 	--num_epochs 150 \
 	--start_val_epoch 149 \
-	--temporal_arch "gsm" \
+	--temporal_arch "gru" \
 	--warm_up_epochs 3 \
 	--batch_size 8 \
 	--clip_len 100 \
