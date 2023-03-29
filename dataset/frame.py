@@ -91,6 +91,12 @@ class FrameReader:
         if n_pad_start > 0 or (pad and n_pad_end > 0):
             ret = nn.functional.pad(
                 ret, (0, 0, 0, 0, 0, 0, n_pad_start, n_pad_end if pad else 0))
+            
+        # Pad for frame num list
+        for _ in range(n_pad_start):
+            frame_num_list.insert(-1, 0)
+        for _ in range(n_pad_end):
+            frame_num_list.append(-1)
         return ret, frame_num_list
 
 
@@ -326,7 +332,7 @@ def load_glip(glip_dir, video_name, frame_num_list, max_object = 50):
                 frame_feat.append(obj['feature'])
         else:
             n_object = 0
-            
+
         # Append nothing to ensure the size
         for _ in range(max_object - n_object):
             frame_feat.append(torch.zeros(feat_size))
