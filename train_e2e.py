@@ -314,6 +314,10 @@ class E2EModel(BaseRGBModel):
 
                 with torch.cuda.amp.autocast():
                     pred = self._model(frame, glip_feat, glip_mask)
+                    print(frame)
+                    print(glip_feat)
+                    print(glip_mask)
+                    print(pred)
 
                     loss = 0.
                     if len(pred.shape) == 3:
@@ -333,8 +337,6 @@ class E2EModel(BaseRGBModel):
                                 input, 
                                 label,
                                 **loss_kwargs)
-                        print(input)
-                        print(loss)
 
                 if optimizer is not None:
                     step(optimizer, scaler, loss / acc_grad_iter,
