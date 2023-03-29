@@ -323,7 +323,7 @@ def load_glip(glip_dir, video_name, frame_num_list, max_object = 50):
             frame_feat.append(obj['feature'])
 
         # Append nothing to ensure the size
-        for _ in range(max_object - len(frame_feat)):
+        for _ in range(max_object - len(feat_dict[num])):
             frame_feat.append(torch.zeros(feat_size))
 
         # Create mask
