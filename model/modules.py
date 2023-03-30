@@ -158,7 +158,6 @@ class ObjectFusion(nn.Module):
             # Output: batch
             esp = 1e-8
             adaptive_thresh = torch.clamp(1. / (esp + torch.sum(mask, dim=-1, keepdim=True)), 0., 1.)
-            print("thresh", torch.sum(torch.isnan(adaptive_thresh)))
 
             # Create mask for hard-attn
             # Output: batch x max_obj
@@ -180,6 +179,7 @@ class ObjectFusion(nn.Module):
             if (len(keep_idx)>0):
                 fuser_input = fuser_input[keep_idx]         # batch x max_obj x hidden_dim
                 hard_attn_mask = hard_attn_mask[keep_idx]   # batch x max_obj
+                print("fuser input filtered", torch.sum(torch.isnan(fuser_input)))
 
                 # Pass to encoder
                 # Output: batch x max_obj x hidden_dim
