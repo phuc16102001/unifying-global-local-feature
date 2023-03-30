@@ -156,7 +156,9 @@ class ObjectFusion(nn.Module):
 
             # Adaptive threshold = 1/nObject
             # Output: batch
-            adaptive_thresh = torch.clamp(1. / torch.sum(mask, dim=-1, keepdim=True), 0., 1.)
+            esp = 1e-8
+            adaptive_thresh = torch.clamp(1. / (esp + torch.sum(mask, dim=-1, keepdim=True)), 0., 1.)
+            print("thresh", torch.sum(torch.isnan(adaptive_thresh)))
 
             # Create mask for hard-attn
             # Output: batch x max_obj
@@ -173,6 +175,8 @@ class ObjectFusion(nn.Module):
             # Get object feature
             # Output: max_obj x batch x hidden_dim
             fuser_input = obj_feat[:, begin:end].contiguous().view(-1, max_obj, hidden_dim)
+            print("fuser input", torch.sum(torch.isnan(fuser_input)))
+
             if (len(keep_idx)>0):
                 fuser_input = fuser_input[keep_idx]         # batch x max_obj x hidden_dim
                 hard_attn_mask = hard_attn_mask[keep_idx]   # batch x max_obj
@@ -180,9 +184,11 @@ class ObjectFusion(nn.Module):
                 # Pass to encoder
                 # Output: batch x max_obj x hidden_dim
                 fuser_output = self._obj_fuser(fuser_input, key_padding_mask=~hard_attn_mask)
+                print("fuser output", torch.sum(torch.isnan(fuser_output)))
 
                 # Normalize result over objects
                 fuser_output = torch.sum(fuser_output, dim=1) / torch.sum(hard_attn_mask, dim=-1, keepdim=True)
+                print("normalized fuser output", torch.sum(torch.isnan(fuser_output)))
 
                 padded_output = torch.zeros(batch_size, hidden_dim).cuda()
                 padded_output[keep_idx] = fuser_output
