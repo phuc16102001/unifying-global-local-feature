@@ -114,8 +114,10 @@ class Encoder(nn.Module):
     def forward(self, x, mask=None, key_padding_mask=None):
         if (self._use_pe):
             x = self.pe(x)
+        print("before encode", torch.sum(torch.isnan(x)))
         for i in range(self._n):
             x = self.encoder_layers[i](
                 x, mask=mask, key_padding_mask=key_padding_mask)
+        print("after encode", torch.sum(torch.isnan(x)))
         x = self.norm(x)
         return x

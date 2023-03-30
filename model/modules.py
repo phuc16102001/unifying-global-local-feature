@@ -188,7 +188,6 @@ class ObjectFusion(nn.Module):
 
                 # Normalize result over objects
                 fuser_output = torch.sum(fuser_output, dim=1) / torch.sum(hard_attn_mask, dim=-1, keepdim=True)
-                print("normalized fuser output", torch.sum(torch.isnan(fuser_output)))
 
                 padded_output = torch.zeros(batch_size, hidden_dim).cuda()
                 padded_output[keep_idx] = fuser_output
