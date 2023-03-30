@@ -79,11 +79,15 @@ class EncoderLayer(nn.Module):
         self.dropout_3 = nn.Dropout(dropout)
         
     def forward(self, x, mask=None, key_padding_mask=None):
-        print("Before attn", torch.sum(torch.isnan(x)))
         x_attn = self.attn(x, x, x, attn_mask=mask, key_padding_mask=key_padding_mask)[0]
-        print("After attn", torch.sum(torch.isnan(x)))
+        cnt_nan = torch.sum(torch.isnan(x))
+        print("After attn", cnt_nan)
+        assert(int(cnt_nan.item())==0)
         if (key_padding_mask is not None):
             x_attn = x_attn.masked_fill(key_padding_mask.unsqueeze(-1), 0)
+        cnt_nan = torch.sum(torch.isnan(x))
+        print("After mask 1", cnt_nan)
+        assert(int(cnt_nan.item())==0)
         x = x + self.dropout_1(x_attn)
         x = self.norm_1(x)
 
@@ -94,9 +98,14 @@ class EncoderLayer(nn.Module):
 
         x = x + self.dropout_3(x_linear)
         x = self.norm_2(x)
+        cnt_nan = torch.sum(torch.isnan(x))
+        print("Before mask 2", cnt_nan)
+        assert(int(cnt_nan.item())==0)
         if (key_padding_mask is not None):
             x = x.masked_fill(key_padding_mask.unsqueeze(-1), 0)
-
+        cnt_nan = torch.sum(torch.isnan(x))
+        print("After mask 2", cnt_nan)
+        assert(int(cnt_nan.item())==0)
         return x
 
 class Encoder(nn.Module):
