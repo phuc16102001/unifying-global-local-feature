@@ -92,6 +92,8 @@ class EncoderLayer(nn.Module):
 
         # Handle all zeros before norm
         esp = 1e-9
+        print(x)
+        print(torch.sum(x==0))
         x = self.norm_1(x+esp)
         cnt_nan = torch.sum(torch.isnan(x))
         print("After norm 1", cnt_nan)
