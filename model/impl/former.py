@@ -80,7 +80,7 @@ class EncoderLayer(nn.Module):
         
     def forward(self, x, mask=None, key_padding_mask=None):
         x_attn = self.attn(x, x, x, attn_mask=mask, key_padding_mask=key_padding_mask)[0]
-        cnt_nan = torch.sum(torch.isnan(x))
+        cnt_nan = torch.sum(torch.isnan(x_attn))
         print("After attn", cnt_nan)
         assert(int(cnt_nan.item())==0)
         if (key_padding_mask is not None):
