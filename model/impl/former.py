@@ -89,6 +89,10 @@ class EncoderLayer(nn.Module):
         print("After mask 1", cnt_nan)
         assert(int(cnt_nan.item())==0)
         x = x + self.dropout_1(x_attn)
+
+        # Handle all zeros before norm
+        with torch.no_grad:
+            x.clamp_(min=1e-2)
         x = self.norm_1(x)
 
         x_linear = self.ff_1(x)
@@ -97,6 +101,9 @@ class EncoderLayer(nn.Module):
         x_linear = self.ff_2(x_linear)
 
         x = x + self.dropout_3(x_linear)
+        
+        with torch.no_grad:
+            x.clamp_(min=1e-2)
         x = self.norm_2(x)
         cnt_nan = torch.sum(torch.isnan(x))
         print("Before mask 2", cnt_nan)
