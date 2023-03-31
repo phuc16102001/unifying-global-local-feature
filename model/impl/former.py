@@ -92,7 +92,9 @@ class EncoderLayer(nn.Module):
 
         # Handle all zeros before norm
         esp = 1e-9
+        print(x.type)
         x = self.norm_1(x+esp)
+
 
         x_linear = self.ff_1(x)
         x_linear = F.relu(x_linear)
