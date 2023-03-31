@@ -85,15 +85,13 @@ class EncoderLayer(nn.Module):
         assert(int(cnt_nan.item())==0)
         if (key_padding_mask is not None):
             x_attn = x_attn.masked_fill(key_padding_mask.unsqueeze(-1), 0)
-        cnt_nan = torch.sum(torch.isnan(x))
+        cnt_nan = torch.sum(torch.isnan(x_attn))
         print("After mask 1", cnt_nan)
         assert(int(cnt_nan.item())==0)
         x = x + self.dropout_1(x_attn)
 
         # Handle all zeros before norm
         esp = 1e-9
-        print(x)
-        print(torch.sum(x==0))
         x = self.norm_1(x+esp)
         cnt_nan = torch.sum(torch.isnan(x))
         print("After norm 1", cnt_nan)
