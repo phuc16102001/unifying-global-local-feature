@@ -81,6 +81,8 @@ class EncoderLayer(nn.Module):
     def forward(self, x, mask=None, key_padding_mask=None):
         print(x)
         print(torch.min(x), torch.max(x))
+        print(mask)
+        print(key_padding_mask)
         x_attn = self.attn(x, x, x, attn_mask=mask, key_padding_mask=key_padding_mask)[0]
         cnt_nan = torch.sum(torch.isnan(x_attn))
         print("After attn", cnt_nan)
