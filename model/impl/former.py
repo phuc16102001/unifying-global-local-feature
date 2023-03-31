@@ -92,7 +92,9 @@ class EncoderLayer(nn.Module):
 
         # Handle all zeros before norm
         esp = 1e-9
-        x = self.norm_1((x.to(torch.float16)+esp))
+        print((x+esp).dtype)
+        print((x.to(torch.float16+esp).dtype))
+        x = self.norm_1(x+esp)
 
 
         x_linear = self.ff_1(x)
