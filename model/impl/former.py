@@ -92,8 +92,7 @@ class EncoderLayer(nn.Module):
 
         # Handle all zeros before norm
         esp = 1e-9
-        print(x.type)
-        x = self.norm_1(x+esp)
+        x = self.norm_1((x.to(torch.float16)+esp))
 
 
         x_linear = self.ff_1(x)
@@ -103,7 +102,7 @@ class EncoderLayer(nn.Module):
 
         x = x + self.dropout_3(x_linear)
         
-        x = self.norm_2(x+esp)
+        x = self.norm_2((x.to(torch.float16)+esp))
         cnt_nan = torch.sum(torch.isnan(x))
         print("Before mask 2", cnt_nan)
         assert(int(cnt_nan.item())==0)
