@@ -509,7 +509,7 @@ def get_datasets(args):
         val_data_frames = ActionSpotVideoDataset(
             classes, os.path.join('data', args.dataset, 'val.json'),
             args.frame_dir, args.modality, args.clip_len,
-            crop_dim=args.crop_dim, overlap_len=0)
+            crop_dim=args.crop_dim, overlap_len=0, glip_dir=args.glip_dir)
 
     return classes, train_data, val_data, val_data_frames
 
