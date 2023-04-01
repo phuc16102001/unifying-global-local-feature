@@ -5,7 +5,7 @@ import torch.nn.functional as F
 
 from .common import SingleStageTCN
 from .impl.asformer import MyTransformer
-from .impl.former import Encoder
+from .impl.former import Encoder, Norm
 from .utils import masked_softmax
 
 
@@ -116,6 +116,9 @@ class ObjectFusion(nn.Module):
 
         self._env_linear = nn.Linear(env_dim, hidden_dim)
         self._obj_linear = nn.Linear(obj_dim, hidden_dim)
+        self._env_norm = Norm(hidden_dim)
+        self._obj_norm = Norm(hidden_dim)
+
         self._obj_fuser = Encoder(
             hidden_dim, 
             num_encoders, 
@@ -199,7 +202,10 @@ class ObjectFusion(nn.Module):
     # project feature size: batch x frames x hidden_dim
     def forward(self, env_feat, obj_feat, obj_mask):
         env_feat = self._env_linear(env_feat)
+        env_feat = self._env_norm(env_feat) 
+
         obj_feat = self._obj_linear(obj_feat)
+        obj_feat = self._obj_norm(obj_feat) 
 
         # Fuse object
         # Output: batch x frames x hidden_dim
@@ -217,8 +223,8 @@ class ObjectFusion(nn.Module):
             fuser_input = stacked_feat[:, begin:end].contiguous()       # batch x (hidden*2)
             fuser_input = fuser_input.view(-1, 2, hidden_dim)           # batch x 2 x hidden
 
-            # fuser_output = self._env_obj_fuser(fuser_input)             # batch x 2 x hidden
-            fuser_output = fuser_input                                  # batch x 2 x hidden
+            fuser_output = self._env_obj_fuser(fuser_input)             # batch x 2 x hidden
+            # fuser_output = fuser_input                                  # batch x 2 x hidden
             fuser_output = torch.mean(fuser_output, dim=1)              # batch x hidden
 
             project_feat[:, begin:end] = fuser_output.view(batch_size, -1, hidden_dim)

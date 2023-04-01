@@ -345,7 +345,7 @@ def load_glip(glip_dir, video_name, frame_num_list, max_object = 50):
         
         ret.append(frame_feat)
         mask.append(frame_mask)
-    ret = torch.stack(ret)/100
+    ret = torch.stack(ret)
     mask = torch.stack(mask)
     return ret, mask
 
