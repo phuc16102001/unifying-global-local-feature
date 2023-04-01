@@ -218,6 +218,7 @@ class ObjectFusion(nn.Module):
             fuser_input = fuser_input.view(-1, 2, hidden_dim)           # batch x 2 x hidden
 
             # fuser_output = self._env_obj_fuser(fuser_input)             # batch x 2 x hidden
+            fuser_output = fuser_input                                  # batch x 2 x hidden
             fuser_output = torch.mean(fuser_output, dim=1)              # batch x hidden
 
             project_feat[:, begin:end] = fuser_output.view(batch_size, -1, hidden_dim)
