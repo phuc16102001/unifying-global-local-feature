@@ -118,6 +118,7 @@ class ObjectFusion(nn.Module):
         self._obj_linear = nn.Linear(obj_dim, hidden_dim)
         self._env_norm = Norm(hidden_dim)
         self._obj_norm = Norm(hidden_dim)
+        self._obj_env_norm = Norm(hidden_dim)
 
         self._obj_fuser = Encoder(
             hidden_dim, 
@@ -140,6 +141,7 @@ class ObjectFusion(nn.Module):
 
         # Broadcast all env feat to obj feat
         obj_env_feat = torch.unsqueeze(env_feat, 2) + obj_feat  
+        obj_env_feat = self._obj_env_norm(obj_env_feat)
         obj_fused_feat = torch.zeros(batch_size, frames, hidden_dim).cuda()
         if (max_obj == 0):
             return obj_fused_feat
