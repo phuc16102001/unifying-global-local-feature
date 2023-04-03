@@ -141,7 +141,6 @@ class ObjectFusion(nn.Module):
 
         # Broadcast all env feat to obj feat
         obj_env_feat = torch.unsqueeze(env_feat, 2) + obj_feat  
-        obj_env_feat = self._obj_env_norm(obj_env_feat)
         obj_fused_feat = torch.zeros(batch_size, frames, hidden_dim).cuda()
         if (max_obj == 0):
             return obj_fused_feat
