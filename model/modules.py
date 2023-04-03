@@ -205,14 +205,23 @@ class ObjectFusion(nn.Module):
     def forward(self, env_feat, obj_feat, obj_mask):
         env_feat = self._env_linear(env_feat)
         env_feat = self._env_norm(env_feat) 
+        
+        cnt_nan = torch.sum(torch.isnan(env_feat)).item()
+        assert cnt_nan == 0, 'Env feat contains nan'
 
         obj_feat = self._obj_linear(obj_feat)
         obj_feat = self._obj_norm(obj_feat) 
+        
+        cnt_nan = torch.sum(torch.isnan(obj_feat)).item()
+        assert cnt_nan == 0, 'Obj feat contains nan'
 
         # Fuse object
         # Output: batch x frames x hidden_dim
 
         obj_fused_feat = self.fuse_obj(env_feat, obj_feat, obj_mask)
+        
+        cnt_nan = torch.sum(torch.isnan(obj_fused_feat)).item()
+        assert cnt_nan == 0, 'Obj fused feat contains nan'
         
         # Fuse environment end fused object feature
         stacked_feat = torch.stack([env_feat, obj_fused_feat], dim=2)
@@ -226,9 +235,16 @@ class ObjectFusion(nn.Module):
             fuser_input = fuser_input.view(-1, 2, hidden_dim)           # batch x 2 x hidden
 
             fuser_output = self._env_obj_fuser(fuser_input)             # batch x 2 x hidden
-            # fuser_output = fuser_input                                  # batch x 2 x hidden
+            
+            cnt_nan = torch.sum(torch.isnan(fuser_output)).item()
+            assert cnt_nan == 0, 'Obj env fused feat contains nan'
+        
             fuser_output = torch.mean(fuser_output, dim=1)              # batch x hidden
 
             project_feat[:, begin:end] = fuser_output.view(batch_size, -1, hidden_dim)
+
+
+        cnt_nan = torch.sum(torch.isnan(project_feat)).item()
+        assert cnt_nan == 0, 'Projected feat contains nan'
 
         return project_feat
