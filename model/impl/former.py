@@ -79,24 +79,24 @@ class EncoderLayer(nn.Module):
         self.dropout_3 = nn.Dropout(dropout)
         
     def forward(self, x, mask=None, key_padding_mask=None):
-        # print(x.shape)
-        # print(torch.min(x).item(), torch.max(x).item(), torch.sum(torch.isnan(x)).item())
         x_attn = self.attn(x, x, x, attn_mask=mask, key_padding_mask=key_padding_mask)[0]
-        # cnt_nan = torch.sum(torch.isnan(x_attn))
-        # print("After attn", cnt_nan)
-        # assert(int(cnt_nan.item())==0)
+        
+        cnt_nan = torch.sum(torch.isnan(x_attn)).item()
+        assert cnt_nan == 0, 'After attn contains nan'
+        
         if (key_padding_mask is not None):
             x_attn = x_attn.masked_fill(key_padding_mask.unsqueeze(-1), 0)
-        # cnt_nan = torch.sum(torch.isnan(x_attn))
-        # print("After mask 1", cnt_nan)
-        # assert(int(cnt_nan.item())==0)
+        
+        cnt_nan = torch.sum(torch.isnan(x_attn)).item()
+        assert cnt_nan == 0, 'After mask fill 1 contains nan'
+        
         x = x + self.dropout_1(x_attn)
 
         # Handle all zeros before norm
         x = self.norm_1(x)
-        # cnt_nan = torch.sum(torch.isnan(x))
-        # print("After norm 1", cnt_nan)
-        # assert(int(cnt_nan.item())==0)
+        
+        cnt_nan = torch.sum(torch.isnan(x)).item()
+        assert cnt_nan == 0, 'After norm_1 contains nan'
 
         x_linear = self.ff_1(x)
         x_linear = F.relu(x_linear)
@@ -105,19 +105,20 @@ class EncoderLayer(nn.Module):
 
         x = x + self.dropout_3(x_linear)
         
-        # cnt_nan = torch.sum(torch.isnan(x))
-        # print("Before norm 2", cnt_nan)
-        # assert(int(cnt_nan.item())==0)
+        cnt_nan = torch.sum(torch.isnan(x)).item()
+        assert cnt_nan == 0, 'Before norm_2 contains nan'
+        
         x = self.norm_2(x)
         
-        # cnt_nan = torch.sum(torch.isnan(x))
-        # print("Before mask 2", cnt_nan)
-        # assert(int(cnt_nan.item())==0)
+        cnt_nan = torch.sum(torch.isnan(x)).item()
+        assert cnt_nan == 0, 'After norm_2 contains nan'
+        
         if (key_padding_mask is not None):
             x = x.masked_fill(key_padding_mask.unsqueeze(-1), 0)
-        # cnt_nan = torch.sum(torch.isnan(x))
-        # print("After mask 2", cnt_nan)
-        # assert(int(cnt_nan.item())==0)
+        
+        cnt_nan = torch.sum(torch.isnan(x)).item()
+        assert cnt_nan == 0, 'After mask fill 2 contains nan'
+        
         return x
 
 class Encoder(nn.Module):
@@ -137,10 +138,16 @@ class Encoder(nn.Module):
     def forward(self, x, mask=None, key_padding_mask=None):
         if (self._use_pe):
             x = self.pe(x)
-        # print("before encode", torch.sum(torch.isnan(x)))
+            
+        cnt_nan = torch.sum(torch.isnan(x)).item()
+        assert cnt_nan == 0, 'Input encoder contains nan'
+        
         for i in range(self._n):
             x = self.encoder_layers[i](
                 x, mask=mask, key_padding_mask=key_padding_mask)
-        # print("after encode", torch.sum(torch.isnan(x)))
         x = self.norm(x)
+        
+        cnt_nan = torch.sum(torch.isnan(x)).item()
+        assert cnt_nan == 0, 'Output encoder contains nan'
+                
         return x
