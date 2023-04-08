@@ -1,7 +1,7 @@
 export CUDA_VISIBLE_DEVICES=1
 python3 train_e2e.py "test_glip" \
 	"/ext_drive/data/soccernet_720p_2fps" \
-	-s "results/800MF_GRU_GSM_Integer_GLIP" \
+	-s "results/800MF_GRU_GSM_Integer_AlphaNo_Gamma5" \
 	-m "rny008_gsm" \
 	-mgpu \
 	--learning_rate 1e-3 \
@@ -15,7 +15,9 @@ python3 train_e2e.py "test_glip" \
 	--label_type "integer" \
 	--num_workers 4 \
 	--mixup \
-	--glip_dir "/ext_drive/data/glip_feat" 
+	--alpha -1 \
+	--gamma 5 
+#	--glip_dir "/ext_drive/data/glip_feat" 
 
 # srun python3 train_e2e.py soccernetv2 soccerNet_outdir -s /cm/archive/kimth1/spot/save_soccernet_p2 -m rny008_gsm -mgpu --num_epochs 50 --batch_size 8 --crop_dim -1 --resume
 # add --resume to train from checkpoint
