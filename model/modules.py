@@ -202,14 +202,14 @@ class ObjectFusion(nn.Module):
     # obj mask size: batch x frames x max_obj
     # project feature size: batch x frames x hidden_dim
     def forward(self, env_feat, obj_feat, obj_mask):
-        env_feat = self._env_linear(env_feat)
         env_feat = self._env_norm(env_feat) 
+        env_feat = self._env_linear(env_feat)
         
         cnt_nan = torch.sum(torch.isnan(env_feat)).item()
         assert cnt_nan == 0, 'Env feat contains nan'
 
-        obj_feat = self._obj_linear(obj_feat)
         obj_feat = self._obj_norm(obj_feat) 
+        obj_feat = self._obj_linear(obj_feat)
         
         cnt_nan = torch.sum(torch.isnan(obj_feat)).item()
         assert cnt_nan == 0, 'Obj feat contains nan'
