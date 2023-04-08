@@ -568,7 +568,9 @@ def store_config(file_path, args, num_epochs, classes):
         'mixup': args.mixup,
         'glip_feature': (args.glip_dir is not None),
         'fg_upsample': args.fg_upsample,
-        'label_type': args.label_type
+        'label_type': args.label_type,
+        'alpha': args.alpha,
+        'gamma': args.gamma
     }
     store_json(file_path, config, pretty=True)
 
