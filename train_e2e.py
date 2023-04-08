@@ -28,7 +28,7 @@ from util.dataset import DATASETS, load_classes
 from util.score import compute_mAPs
 from util.losses import sigmoid_focal_loss
 
-EPOCH_NUM_FRAMES = 5_000
+EPOCH_NUM_FRAMES = 500_000
 BASE_NUM_WORKERS = 4
 BASE_NUM_VAL_EPOCHS = 20
 INFERENCE_BATCH_SIZE = 12
