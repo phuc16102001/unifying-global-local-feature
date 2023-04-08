@@ -12,7 +12,7 @@ python3 train_e2e.py "test_glip" \
 	--batch_size 8 \
 	--clip_len 100 \
 	--crop_dim -1 \
-	--label_type "integer" \
+	--label_type "one_hot" \
 	--num_workers 4 \
 	--mixup \
 	--alpha -1 \
