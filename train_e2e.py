@@ -46,6 +46,8 @@ def get_args():
     parser.add_argument('dataset', type=str, choices=DATASETS)
     parser.add_argument('frame_dir', type=str, help='Path to extracted frames')
     parser.add_argument('--glip_dir', type=str, default=None, help="Path to extracted GLIP features", required=False)
+    parser.add_argument('--alpha', type=float, default=0.25, help="Params of focal loss")
+    parser.add_argument('--gamma', type=float, default=2.0, help="Params of focal loss")
 
     parser.add_argument('--modality', type=str, choices=['rgb', 'bw', 'flow'],
                         default='rgb')
@@ -116,8 +118,10 @@ class E2EModel(BaseRGBModel):
     class Impl(nn.Module):
 
         def __init__(self, num_classes, feature_arch, temporal_arch, clip_len,
-                    glip_feature, modality, label_type):
+                    glip_feature, modality, label_type, alpha=0.25, gamma=2.0):
             super().__init__()
+            self._alpha = alpha
+            self._gamma = gamma
             self._label_type = label_type
             self._glip_feature = glip_feature
             is_rgb = modality == 'rgb'
@@ -264,12 +268,16 @@ class E2EModel(BaseRGBModel):
                 sum(p.numel() for p in self._pred_fine.parameters()))
 
     def __init__(self, num_classes, feature_arch, temporal_arch, clip_len,
-                 glip_feature, modality, device='cuda', multi_gpu=False, label_type='one_hot'):
+                 glip_feature, modality, device='cuda', multi_gpu=False, label_type='one_hot',
+                 alpha=0.25, gamma=2.0):
         self.device = device
         self._multi_gpu = multi_gpu
         self._glip_feature = glip_feature
+        self._alpha = alpha
+        self._gamma = gamma
         self._model = E2EModel.Impl(
-            num_classes, feature_arch, temporal_arch, clip_len, glip_feature, modality, label_type)
+            num_classes, feature_arch, temporal_arch, clip_len, glip_feature, modality, label_type,
+            alpha=alpha, gamma=gamma)
         self._model.print_stats()
 
         if multi_gpu:
@@ -326,6 +334,8 @@ class E2EModel(BaseRGBModel):
                             loss += sigmoid_focal_loss(
                                 input, 
                                 label,
+                                alpha=self._alpha,
+                                gamma=self._gamma,
                                 reduction='sum',
                                 **loss_kwargs) / input.shape[0] 
                         else:
@@ -613,7 +623,8 @@ def main(args):
         len(classes) + 1, args.feature_arch, args.temporal_arch,
         glip_feature = (args.glip_dir is not None),
         clip_len=args.clip_len, modality=args.modality,
-        multi_gpu=args.gpu_parallel, label_type=args.label_type)
+        multi_gpu=args.gpu_parallel, label_type=args.label_type,
+        alpha=args.alpha, gamma=args.gamma)
     optimizer, scaler = model.get_optimizer({'lr': args.learning_rate})
 
     # Warmup schedule
