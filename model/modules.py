@@ -116,8 +116,8 @@ class ObjectFusion(nn.Module):
 
         self._env_linear = nn.Linear(env_dim, hidden_dim)
         self._obj_linear = nn.Linear(obj_dim, hidden_dim)
-        self._env_norm = Norm(hidden_dim)
-        self._obj_norm = Norm(hidden_dim)
+        self._env_norm = Norm(env_dim)
+        self._obj_norm = Norm(obj_dim)
         self._obj_env_norm = Norm(hidden_dim)
 
         self._obj_fuser = Encoder(
