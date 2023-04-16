@@ -115,7 +115,7 @@ def main(model_dir, frame_dir, split, no_overlap, save, save_as, glip_dir, datas
 
     evaluate(model, split_data, split.upper(), classes, pred_file,
              high_recall_score_threshold = high_recall_score_threshold,
-             calc_stats=False)
+             calc_stats=True)
 
 
 if __name__ == '__main__':
