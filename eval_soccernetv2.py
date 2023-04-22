@@ -14,7 +14,27 @@ from eval_ensemble import ensemble
 
 from SoccerNet.Evaluation.ActionSpotting import evaluate as sn_evaluate
 from SoccerNet.Evaluation.utils import INVERSE_EVENT_DICTIONARY_V2
+import shutil
 
+# score_dict = {
+#     'Ball out of play': 0.05,
+#     'Clearance': 0.05,
+#     'Corner': 0.05,
+#     'Direct free-kick': 0.05,
+#     'Foul': 0.05,
+#     'Goal': 0.05,
+#     'Indirect free-kick': 0.05,
+#     'Kick-off': 0.05,
+#     'Offside': 0.05,
+#     'Penalty': 0.05,
+#     'Red card': 0.05,
+#     'Shots off target': 0.05,
+#     'Shots on target': 0.05,
+#     'Substitution': 0.05,
+#     'Throw-in': 0.05,
+#     'Yellow card': 0.05,
+#     'Yellow->red card': 0.05
+# }
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -27,10 +47,13 @@ def get_args():
                         help='Path to SoccerNetV2 labels')
     parser.add_argument('--eval_dir',
                         help='Path to save intermediate files to. E.g., for sumbission to the evaluation server.')
+    parser.add_argument('--filter_score', type=float, default=0.0, required=False,
+                        help='Filter score under the thresh')
+    parser.add_argument('--allow_remove', action='store_true', help='Allow remove output folder if existed')
     return parser.parse_args()
 
 
-def store_eval_files(raw_pred, eval_dir):
+def store_eval_files(raw_pred, eval_dir, allow_remove):
     game_pred = defaultdict(list)
     for obj in raw_pred:
         game, half = obj['video'].rsplit('/', 1)
@@ -49,6 +72,10 @@ def store_eval_files(raw_pred, eval_dir):
                 'confidence': str(event['score'])
             })
 
+    if (allow_remove and os.path.exists(eval_dir)):
+        print("Remove directory")
+        shutil.rmtree(eval_dir)
+
     for game, pred in game_pred.items():
         game_out_dir = os.path.join(eval_dir, game)
         os.makedirs(game_out_dir)
@@ -61,7 +88,7 @@ def load_fps_dict(ref_file):
     return {v['video']: v['fps'] for v in load_gz_json(ref_file)}
 
 
-def main(pred_file, split, soccernet_path, nms_window, eval_dir):
+def main(pred_file, split, soccernet_path, nms_window, eval_dir, filter_score, allow_remove):
     if len(pred_file) == 1:
         pred_file = pred_file[0]
         if os.path.isdir(pred_file):
@@ -86,6 +113,23 @@ def main(pred_file, split, soccernet_path, nms_window, eval_dir):
                 scores.append(load_gz_json(p))
         _, pred = ensemble('soccernetv2', scores, fps_dict=fps_dict)
 
+    if (allow_remove):
+        print("Allow remove previous output folder")
+
+    # Filter score
+    if (filter_score>0):
+        print(f"Filter score: {filter_score}")
+        for i in range(len(pred)):
+            listEvent = pred[i]['events']
+            newListEvent = []
+            for event in listEvent:
+                label = event['label']
+                score = event['score']
+                # if (score>=score_dict[label]):
+                if (score>=filter_score):
+                    newListEvent.append(event)
+            pred[i]['events']=newListEvent
+
     if nms_window > 0:
         print('Applying NMS:', nms_window)
         pred = non_maximum_supression(pred, nms_window)
@@ -93,7 +137,7 @@ def main(pred_file, split, soccernet_path, nms_window, eval_dir):
     if eval_dir is None:
         tmp_eval_dir = tempfile.TemporaryDirectory(prefix='soccernetv2-eval')
         eval_dir = tmp_eval_dir.name
-    store_eval_files(pred, eval_dir)
+    store_eval_files(pred, eval_dir, allow_remove)
 
     print('Done processing prediction files!')
 
@@ -121,12 +165,13 @@ def main(pred_file, split, soccernet_path, nms_window, eval_dir):
             '{:0.2f}'.format(results['a_mAP_visible'] * 100),
             '{:0.2f}'.format(results['a_mAP_unshown'] * 100)
         ))
+        print(results)
 
         print('Metric:', metric)
         print(tabulate(rows, headers=['', 'Any', 'Visible', 'Unseen']))
 
     if (split!='challenge'):
-        eval_wrapper('loose')
+        # eval_wrapper('loose')
         eval_wrapper('tight')
 
 
