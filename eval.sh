@@ -1,5 +1,7 @@
-python eval_soccernetv2.py "D:\Thesis\data\prediction\pred-test.143.recall.json" \
+python3 eval_soccernetv2.py "/Users/JLJXDXCFK7/Prediction/pred-test.149.recall.json" \
 	--split "test" \
-	--eval_dir "D:\Thesis\data\prediction\output" \
-	--soccernet_path "D:\Thesis\data\soccernet_label" \
-	--nms_window 2
+	--eval_dir "/Users/JLJXDXCFK7/Prediction/output" \
+	--soccernet_path "/Users/JLJXDXCFK7/Data/soccernet-label" \
+	--nms_window 2 \
+	--filter_score 0.05 \
+	--allow_remove
