@@ -291,6 +291,9 @@ def load_glip(glip_dir, video_name, frame_num_list, max_object = 50):
         boxes = row[2:6]
         feat = row[6:]
 
+        if (class_id == 0):
+            continue
+
         if (frame_idx not in feat_dict):
             feat_dict[frame_idx] = []
 
