@@ -33,7 +33,7 @@ python frames_as_jpg_soccernet.py <video_dir> \
     --out_dir <output_dir>
 ```
 
-By default, it extracts the video at 2fps and use $\frac{\#cpu}{4}$ workers. If you need to tune these value, use the following command:
+By default, it extracts the video at 2fps and use $\frac{cpu_count}{4}$ workers. If you need to tune these value, use the following command:
 
 ```bash
 python frames_as_jpg_soccernet.py <video_dir> \
