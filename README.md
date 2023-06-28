@@ -151,10 +151,9 @@ export CUDA_VISIBLE_DEVICES = <list_of_gpu_ids>
 
 python3 test_e2e.py <save_dir> \
 	<frame_dir> \
-    --glip_dir <local_feature_dir> \
+    	--glip_dir <local_feature_dir> \
 	--split <data_split> \
 	--recall_thresh <recall_threshold> \
-	--criterion_key "val" \
 	--save
 ```
 
