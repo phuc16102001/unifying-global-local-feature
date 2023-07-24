@@ -7,6 +7,9 @@ This repository contains the implementation of UGLF model. It is a deep learning
 <p align="center">
     <img style="width: 70%" src="img/model.png"/>
 </p>
+<p align="center">
+  <b>Our proposed model</b>
+</p>
 
 ## Gallery
 
@@ -24,6 +27,23 @@ To prepare for the required libraries, you can either install them on the local 
 pip install -r requirements.txt
 ```
 
+### Data downloader
+
+In the repository, you can use the code in `/downloader` to download the data.
+Particularly, you will get the password after signing the NDA and replace in the following command:
+
+```bash
+python3 download.py --password <password> \
+    --directory <download_path> \
+    --low_quality
+```
+
+You can change the flag `--low_quality` by these one:
+- label: Download labels
+- baidu: Download baidu feature
+- high_quality: Download video 720p
+- low_quality: Download video 224p
+
 ### Frame extracting
 
 From the downloaded videos, you need to use the `frames_as_jpg_soccernet` script to extract frames:
@@ -33,7 +53,7 @@ python frames_as_jpg_soccernet.py <video_dir> \
     --out_dir <output_dir>
 ```
 
-By default, it extracts the video at 2fps and use $\frac{cpu_count}{4}$ workers. If you need to tune these value, use the following command:
+By default, it extracts the video at 2fps and use $\frac{\#cpu}{4}$ workers. If you need to tune these value, use the following command:
 
 ```bash
 python frames_as_jpg_soccernet.py <video_dir> \
@@ -151,9 +171,10 @@ export CUDA_VISIBLE_DEVICES = <list_of_gpu_ids>
 
 python3 test_e2e.py <save_dir> \
 	<frame_dir> \
-    	--glip_dir <local_feature_dir> \
+    --glip_dir <local_feature_dir> \
 	--split <data_split> \
 	--recall_thresh <recall_threshold> \
+	--criterion_key "val" \
 	--save
 ```
 
@@ -214,10 +235,73 @@ python3 merge_prediction.py "prediction_1.json" \
     --second "Red card,Yellow card,Yellow->red card"
 ```
 
+### Prediction analyze
+
+To analyze the prediction, you can use the `view` script. 
+Also, you can pass the `--nms` flag to run the NMS with the score filter 0.2 threshold.
+
+```bash
+python view.py <data_name> \
+  <prediction_folder> \
+  <frame_folder> \
+  --nms
+```
+
+As a result, a website should be hosted in `localhost:8000`.
+
+<p align="center">
+  <img src="img/result_analyze.png" stype="width: 80%">
+  <b>Prediction analyze</b>
+</p>
+
+### Prediction video visualize
+
+With a given video, you can use the `visualize_result` to see the video and select the event the you want to navigate to.
+Firstly, please place the prediction in the same folder with the video:
+
+```
+|- match_name
+   |- 1_720.mkv
+   |- 2_720.mkv
+   |- results_spotting.json
+```
+
+We recommended that you should use anaconda to create the virtual environment in this application:
+
+```bash
+conda create -n annotation python=3.8
+conda activate annotation
+pip install --upgrade pip
+pip install pyqt5
+```
+
+Then, run the application with:
+
+```bash
+cd visualize_result/src
+python3 main.py
+```
+
+<p align="center">
+  <img src="img/result_visualize.png" stype="width: 80%">
+  <b>Prediction visualize</b>
+</p>
+
 ## Result
 
 By combining our UGLF model with the E2E-Spot model, we achieve the top-1 result on SoccerNet-v2 dataset:
 
+<style type="text/css">
+.tg  {border-collapse:collapse;border-spacing:0;}
+.tg td{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
+  overflow:hidden;padding:10px 5px;word-break:normal;}
+.tg th{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
+  font-weight:normal;overflow:hidden;padding:10px 5px;word-break:normal;}
+.tg .tg-bhd9{background-color:#ffffff;border-color:#333333;color:#333333;text-align:left;vertical-align:top}
+.tg .tg-txr3{background-color:#ffffff;border-color:#333333;color:#333333;text-align:center;vertical-align:top}
+.tg .tg-2qwx{background-color:#ffffff;border-color:#000000;color:#333333;text-align:center;vertical-align:top}
+.tg .tg-y2r4{background-color:#ffffff;border-color:#333333;color:#333333;font-weight:bold;text-align:center;vertical-align:top}
+</style>
 <table class="tg" align="center">
 <thead>
   <tr>
@@ -306,6 +390,7 @@ Also, we also want to send a gracefully thank to these public researches, which 
 - [Spotting Temporally Precise, Fine-Grained Events in Video](https://github.com/jhong93/spot)
 - [Grounded Language-Image Pre-training](https://github.com/microsoft/GLIP)
 - [AOE-Net](https://github.com/UARK-AICV/AOE-Net)
+- [SoccerNet](https://github.com/SoccerNet/sn-spotting)
 
 ## Citation
 
