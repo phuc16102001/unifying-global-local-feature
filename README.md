@@ -4,14 +4,14 @@
 
 This repository contains the implementation of UGLF model. It is a deep learning model which is used to solve the action spotting task on the SoccerNet-v2 dataset. By investigating in many current researches, we found that most of them just focus on the global feature (the whole frame) without considering the local feature (objects). From that insight, we propose a UGLF by unifying the global and local feature.
 
+## Gallery
+
 <p align="center">
     <img style="width: 70%" src="img/model.png"/>
 </p>
 <p align="center">
   <b>Our proposed model</b>
 </p>
-
-## Gallery
 
 ## Dataset
 
@@ -53,7 +53,7 @@ python frames_as_jpg_soccernet.py <video_dir> \
     --out_dir <output_dir>
 ```
 
-By default, it extracts the video at 2fps and use $\frac{\#cpu}{4}$ workers. If you need to tune these value, use the following command:
+By default, it extracts the video at 2fps and use $\frac{cpu\_count}{4}$ workers. If you need to tune these value, use the following command:
 
 ```bash
 python frames_as_jpg_soccernet.py <video_dir> \
