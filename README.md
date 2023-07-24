@@ -250,7 +250,7 @@ python view.py <data_name> \
 As a result, a website should be hosted in `localhost:8000`.
 
 <p align="center">
-  <img src="img/result_analyze.png" stype="width: 80%">
+  <img src="img/result_analyze.png" stype="width: 70%">
   <b>Prediction analyze</b>
 </p>
 
@@ -283,7 +283,7 @@ python3 main.py
 ```
 
 <p align="center">
-  <img src="img/result_visualize.png" stype="width: 80%">
+  <img src="img/result_visualize.png" stype="width: 70%">
   <b>Prediction visualize</b>
 </p>
 
