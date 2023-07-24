@@ -291,17 +291,6 @@ python3 main.py
 
 By combining our UGLF model with the E2E-Spot model, we achieve the top-1 result on SoccerNet-v2 dataset:
 
-<style type="text/css">
-.tg  {border-collapse:collapse;border-spacing:0;}
-.tg td{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
-  overflow:hidden;padding:10px 5px;word-break:normal;}
-.tg th{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
-  font-weight:normal;overflow:hidden;padding:10px 5px;word-break:normal;}
-.tg .tg-bhd9{background-color:#ffffff;border-color:#333333;color:#333333;text-align:left;vertical-align:top}
-.tg .tg-txr3{background-color:#ffffff;border-color:#333333;color:#333333;text-align:center;vertical-align:top}
-.tg .tg-2qwx{background-color:#ffffff;border-color:#000000;color:#333333;text-align:center;vertical-align:top}
-.tg .tg-y2r4{background-color:#ffffff;border-color:#333333;color:#333333;font-weight:bold;text-align:center;vertical-align:top}
-</style>
 <table class="tg" align="center">
 <thead>
   <tr>
