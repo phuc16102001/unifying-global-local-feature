@@ -9,7 +9,7 @@ class Event:
 		self.score = score
 
 	def to_text(self):
-		return self.time + " || " + self.label  + " (score: " + str(self.score) + ")"
+		return self.time + " (score: " + str(self.score) + ")"
 
 	def get_label(self):
 		return self.label

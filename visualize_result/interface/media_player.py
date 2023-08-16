@@ -73,7 +73,7 @@ class MediaPlayer(QWidget):
 			# self.path_label = self.get_last_label_file()
 			filter_score, is_ok = QInputDialog.getDouble(self, "Select filter score threshold","Threshold:", 0, 0, 1, 1)
 			self.main_window.list_manager.create_list_from_json(self.path_label, self.main_window.half, filter_score)
-			self.main_window.list_display.display_list(self.main_window.list_manager.create_text_list())
+			self.main_window.list_display.display_list(self.main_window.list_manager.get_event_list())
 
 	def play_video(self):
 		if self.media_player.state() == QMediaPlayer.PlayingState:
