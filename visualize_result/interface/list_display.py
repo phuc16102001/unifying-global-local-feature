@@ -36,7 +36,6 @@ class ListDisplay(QWidget):
 			# position = self.main_window.list_manager.event_list[row].position
 			if self.main_window.media_player.play_button.isEnabled():
 				self.main_window.media_player.set_position(position)
-			self.main_window.media_player.play_video()
 			self.main_window.setFocus()
 
 	def display_list(self, event_list):
