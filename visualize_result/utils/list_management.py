@@ -12,11 +12,8 @@ class ListManager:
 		self.event_list = self.read_json(path, half, filter_score)
 		self.sort_list()
 
-	def create_text_list(self):
-		list_text = list()
-		for event in self.event_list:
-			list_text.append(event.to_text())
-		return list_text
+	def get_event_list(self):
+		return self.event_list
 
 	def delete_event(self, index):
 		self.event_list.pop(index)
@@ -30,7 +27,7 @@ class ListManager:
 		position = list()
 		for event in self.event_list:
 			position.append(event.position)
-		self.event_list = [x for _,x in sorted(zip(position,self.event_list))]
+		self.event_list = [x for _,x in sorted(zip(position,self.event_list), key = lambda x: (x[1].get_label(), x[0]))]
 		
 	def read_json(self, path, half, filter_score):
 		event_list = list()
