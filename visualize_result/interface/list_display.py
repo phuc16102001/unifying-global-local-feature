@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QWidget, QPushButton, QStyle, QSlider, QHBoxLayout, QVBoxLayout, QFileDialog, QGridLayout, QListWidget
+from PyQt5.QtWidgets import QTreeWidgetItem, QTreeWidget, QWidget, QPushButton, QStyle, QSlider, QHBoxLayout, QVBoxLayout, QFileDialog, QGridLayout, QListWidget
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 from PyQt5.QtMultimediaWidgets import QVideoWidget
 from PyQt5.QtCore import Qt, QUrl
@@ -16,14 +16,11 @@ class ListDisplay(QWidget):
 		self.layout = QGridLayout()
 		self.setLayout(self.layout)
 
-		self.list_widget = QListWidget()
-		self.list_widget.clicked.connect(self.clicked)
-		self.list_widget.itemDoubleClicked.connect(self.doubleClicked)
-
+		self.list_widget = QTreeWidget()
+		self.list_widget.setColumnCol(1)
 		self.layout.addWidget(self.list_widget)
 
-	def clicked(self, qmodelindex):
-		item = self.list_widget.currentItem()
+		self.list_widget.itemDoubleClicked.connect(self.doubleClicked)
 
 	def doubleClicked(self, item):
 		row = self.list_widget.currentRow()
@@ -33,7 +30,13 @@ class ListDisplay(QWidget):
 		self.main_window.setFocus()
 
 
-	def display_list(self, list_to_display):
+	def display_list(self, event_list):
 		self.list_widget.clear()
-		for item_nbr, element in enumerate(list_to_display):
-			self.list_widget.insertItem(item_nbr,element)
+		current_label = None
+		for item_nbr, element in enumerate(event_list):
+			if (current_label != element.get_label()):
+				current_label = element.get_label()
+				header_item = QTreeWidgetItem([current_label])
+				self.list_widget.addTopLevelItem(header_item)
+			child_item = QTreeWidgetItem([element.to_text()])
+			self.list_widget.addChild(child_item)
