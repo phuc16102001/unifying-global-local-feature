@@ -35,7 +35,6 @@ function showFrames(elem, video, event, true_event, aux_events,
             let rgb = $('<a>').prop({
                 target: '_blank', href: `full_res/${video.replaceAll('/', '=')}/${i}`
             }).append($('<img>').prop('src', `/rgb/${video.replaceAll('/', '=')}/${i}`));
-            let flow = $('<img>').prop('src', `/flow/${video.replaceAll('/', '=')}/${i}`);
             frame_div.append(
                 $('<div>').addClass('frame-block').append(
                     $('<div>').addClass('frame-info').append(
@@ -61,8 +60,6 @@ function showFrames(elem, video, event, true_event, aux_events,
                     ),
                     context_type == 'sparse' ?
                         rgb.addClass('context-frame') : rgb,
-                    context_type == 'sparse' ?
-                        flow.addClass('context-frame') : flow,
                 )
             )
         }
