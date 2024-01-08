@@ -281,7 +281,7 @@ def _get_img_transforms(
     return crop_transform, img_transform
 
 
-def load_glip(glip_dir, video_name, frame_num_list, max_object):
+def load_glip(glip_dir, video_name, frame_num_list, max_object=50):
     file_name = os.path.join(glip_dir, video_name + ".pt")
     df = torch.load(file_name, map_location="cpu")
 
@@ -541,7 +541,7 @@ class ActionSpotDataset(Dataset):
         glip_mask = None
         if self._glip_dir is not None:
             glip_feat, glip_mask = load_glip(
-                self._glip_dir, video_meta["video"], frame_num_list, self._max_object
+                self._glip_dir, video_meta["video"], frame_num_list
             )
 
         if glip_feat is not None:
@@ -629,7 +629,6 @@ class ActionSpotVideoDataset(Dataset):
         self._video_idxs = {x["video"]: i for i, x in enumerate(self._labels)}
         self._clip_len = clip_len
         self._stride = stride
-        self._max_object = 50
 
         crop_transform, img_transform = _get_img_transforms(
             is_eval=True,
@@ -683,7 +682,7 @@ class ActionSpotVideoDataset(Dataset):
         glip_mask = None
         if self._glip_dir is not None:
             glip_feat, glip_mask = load_glip(
-                self._glip_dir, video_name, frame_num_list, self._max_object
+                self._glip_dir, video_name, frame_num_list
             )
 
         if self._glip_dir is not None:
