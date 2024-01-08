@@ -281,7 +281,7 @@ def _get_img_transforms(
     return crop_transform, img_transform
 
 
-def load_glip(glip_dir, video_name, frame_num_list, max_object=50):
+def load_glip(glip_dir, video_name, frame_num_list, max_object):
     file_name = os.path.join(glip_dir, video_name + ".pt")
     df = torch.load(file_name, map_location="cpu")
 
@@ -317,7 +317,7 @@ def load_glip(glip_dir, video_name, frame_num_list, max_object=50):
     # Output for padding mask
     # Feature size: Frames x Max_objects
     # Frames: Number of frames fetched
-    # Max_objects: Bit mask to keep or not
+    # Meaning: Bit mask to keep or not
     ret = []
     mask = []
     for frame_num in frame_num_list:
@@ -341,15 +341,15 @@ def load_glip(glip_dir, video_name, frame_num_list, max_object=50):
         else:
             n_object = 0
 
-        # Append nothing to ensure the size
+        # Padding zeros to ensure the size
         for _ in range(max_object - n_object):
             frame_feat.append(torch.zeros(feat_size))
         frame_feat = torch.stack(frame_feat)
 
         # Create mask
-        frame_mask = torch.concat(
-            (torch.ones(n_object), torch.zeros(max_object - n_object))
-        )
+        ones_tensor = torch.ones(n_object)
+        zero_tensor = torch.zeros(max_object - n_object)
+        frame_mask = torch.concat((ones_tensor, zero_tensor))
 
         ret.append(frame_feat)
         mask.append(frame_mask)
@@ -541,7 +541,7 @@ class ActionSpotDataset(Dataset):
         glip_mask = None
         if self._glip_dir is not None:
             glip_feat, glip_mask = load_glip(
-                self._glip_dir, video_meta["video"], frame_num_list
+                self._glip_dir, video_meta["video"], frame_num_list, self._max_object
             )
 
         if glip_feat is not None:
@@ -585,9 +585,17 @@ class ActionSpotDataset(Dataset):
             ret["label"] = label_dist
 
             if self._glip_dir is not None:
-                if 1.0 - l > l:
-                    ret["glip_feature"] = mix["glip_feature"]
-                    ret["glip_mask"] = mix["glip_mask"]
+                feature_1 = l * ret["glip_feature"]
+                feature_2 = (1.0 - l) * mix["glip_feature"]
+                mixed_glip_feature = (feature_1, feature_2)
+                ret["glip_feature"] = torch.concat(
+                    mixed_glip_feature, dim=1
+                )  # frame x (obj1 + obj2) x feat
+
+                mask_1 = ret["glip_mask"]  # frame x n_obj
+                mask_2 = mix["glip_mask"]  # frame x n_obj
+                mixed_glip_mask = (mask_1, mask_2)
+                ret["glip_mask"] = torch.concat(mixed_glip_mask, dim=1)
 
         return ret
 
@@ -621,6 +629,7 @@ class ActionSpotVideoDataset(Dataset):
         self._video_idxs = {x["video"]: i for i, x in enumerate(self._labels)}
         self._clip_len = clip_len
         self._stride = stride
+        self._max_object = 50
 
         crop_transform, img_transform = _get_img_transforms(
             is_eval=True,
@@ -673,7 +682,9 @@ class ActionSpotVideoDataset(Dataset):
         glip_feat = None
         glip_mask = None
         if self._glip_dir is not None:
-            glip_feat, glip_mask = load_glip(self._glip_dir, video_name, frame_num_list)
+            glip_feat, glip_mask = load_glip(
+                self._glip_dir, video_name, frame_num_list, self._max_object
+            )
 
         if self._glip_dir is not None:
             return {
